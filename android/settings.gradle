@@ -21,9 +21,9 @@ include(":app")
 
 // Capacitor Android core
 include(":capacitor-android")
-project(":capacitor-android").projectDir = File("../node_modules/@capacitor/android/capacitor")
+project(":capacitor-android").projectDir = file("../node_modules/@capacitor/android/capacitor")
 
 // If you add capacitor plugins, include them too
 // Example:
 // include(":capacitor-cordova-android-plugins")
-// project(":capacitor-cordova-android-plugins").projectDir = File("../node_modules/@capacitor/android/capacitor-cordova-android-plugins")
+// project(":capacitor-cordova-android-plugins").projectDir = file("../node_modules/@capacitor/android/capacitor-cordova-android-plugins")
