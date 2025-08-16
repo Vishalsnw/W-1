@@ -60,10 +60,13 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
       
-      # Make gradlew executable
-      - name: Make gradlew executable
+      # Generate Gradle wrapper if missing
+      - name: Generate Gradle wrapper
         run: |
           cd android
+          if [ ! -f gradlew ]; then
+            gradle wrapper
+          fi
           chmod +x gradlew
       
       # Clean build cache
