@@ -11,34 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Node.js (if Capacitor web build needed)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      # Setup Java JDK
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Setup Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # Setup Gradle (preinstalled, avoids wrapper download timeout)
+      # Install Gradle (so we can run gradle directly)
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: '8.2.1'
 
-      # Cache node_modules
       - name: Cache node modules
         uses: actions/cache@v4
         with:
@@ -47,50 +42,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # Install NPM dependencies
       - name: Install dependencies
         run: npm install
 
-      # Ensure Capacitor Android platform exists
-      - name: Ensure Android platform
+      - name: Sync Capacitor Android
         run: npx cap sync android
 
-      # Create required directories
       - name: Create asset directories
         run: mkdir -p android/app/src/main/assets
 
-      # Clean build cache
       - name: Clean build cache
-        run: |
-          cd android
-          ./gradlew clean
-          rm -rf .gradle build app/build
+        run: gradle -p android clean
 
-      # Build Debug APK
       - name: Build Debug APK
-        run: |
-          cd android
-          ./gradlew assembleDebug --stacktrace --refresh-dependencies
+        run: gradle -p android assembleDebug --stacktrace --refresh-dependencies
 
-      # Upload Debug APK
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: whatsorder-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      # Build Release APK (if keystore exists)
-      - name: Build Release APK
+      - name: Build Release APK (if keystore exists)
         run: |
-          cd android
-          if [ -f app/whatsorder-release-key.keystore ]; then
-            ./gradlew assembleRelease --stacktrace --refresh-dependencies
+          if [ -f android/app/whatsorder-release-key.keystore ]; then
+            gradle -p android assembleRelease --stacktrace --refresh-dependencies
           else
             echo "⚠️ No keystore found, skipping release build"
           fi
         continue-on-error: true
 
-      # Upload Release APK
       - name: Upload Release APK
         if: success()
         uses: actions/upload-artifact@v4
