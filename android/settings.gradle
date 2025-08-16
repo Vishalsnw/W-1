@@ -7,6 +7,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
@@ -15,3 +16,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "WhatsOrder"
 include ':app'
+
+// Capacitor Android core
+include ':capacitor-android'
+project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
+
+// If you add capacitor plugins, include them too
+// example:
+// include ':capacitor-cordova-android-plugins'
+// project(':capacitor-cordova-android-plugins').projectDir = new File('../node_modules/@capacitor/android/capacitor-cordova-android-plugins')
