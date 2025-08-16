@@ -50,20 +50,6 @@ jobs:
           npm install
           npm install -D typescript
       
-      # Ensure Capacitor project is initialized
-      - name: Initialize Capacitor
-        run: |
-          if [ ! -f capacitor.config.ts ]; then
-            npx cap init "WhatsOrder" "com.vishal.whatsorder"
-          fi
-      
-      # Ensure Android platform exists
-      - name: Add Android platform
-        run: |
-          if [ ! -d android ]; then
-            npx cap add android
-          fi
-      
       # Create required directories
       - name: Create web and asset directories
         run: |
@@ -74,16 +60,11 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
       
-      # Ensure gradlew exists and executable
-      - name: Ensure gradlew exists
+      # Make gradlew executable
+      - name: Make gradlew executable
         run: |
           cd android
-          if [ ! -f gradlew ]; then
-            echo "⚠️ gradlew missing, generating wrapper..."
-            gradle wrapper
-          fi
           chmod +x gradlew
-          cd ..
       
       # Clean build cache
       - name: Clean build cache
