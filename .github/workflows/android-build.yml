@@ -77,15 +77,25 @@ jobs:
           chmod +x android/gradlew
         fi
       
-    - name: Clean and refresh dependencies
+    - name: Clean build cache and dependencies
       run: |
         cd android
         ./gradlew clean
+        rm -rf .gradle
+        rm -rf build
+        rm -rf app/build
         
-    - name: Build debug APK with refreshed dependencies
+    - name: Build debug APK with clean slate
       run: |
         cd android
-        ./gradlew assembleDebug --refresh-dependencies
+        ./gradlew assembleDebug --refresh-dependencies --recompile-scripts
+        
+    - name: Fallback build if first attempt fails
+      if: failure()
+      run: |
+        cd android
+        ./gradlew clean
+        ./gradlew assembleDebug --no-daemon --stacktrace
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
@@ -98,7 +108,7 @@ jobs:
       run: |
         cd android
         if [ -f app/whatsorder-release-key.keystore ]; then
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --refresh-dependencies
         else
           echo "Release keystore not found, skipping release build"
         fi
