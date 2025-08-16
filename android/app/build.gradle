@@ -36,20 +36,33 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     
-    // Capacitor
-    implementation project(':capacitor-android')
-    implementation project(':capacitor-camera')
-    implementation project(':capacitor-filesystem')
+    // Capacitor - with exclusions
+    implementation(project(':capacitor-android')) {
+        exclude group: 'com.android.support'
+    }
+    implementation(project(':capacitor-camera')) {
+        exclude group: 'com.android.support'
+    }
+    implementation(project(':capacitor-filesystem')) {
+        exclude group: 'com.android.support'
+    }
     
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-auth'
-    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    implementation('com.google.firebase:firebase-auth') {
+        exclude group: 'com.android.support'
+    }
+    implementation('com.google.android.gms:play-services-auth:20.7.0') {
+        exclude group: 'com.android.support'
+    }
     
-    // Google Auth Plugin - exclude support library to avoid conflicts
+    // Google Auth Plugin - comprehensive exclusions
     implementation('com.github.CodetrixStudio:CapacitorGoogleAuth:1.3.2') {
+        exclude group: 'com.android.support'
         exclude group: 'com.android.support', module: 'support-compat'
         exclude group: 'com.android.support', module: 'support-v4'
+        exclude group: 'com.android.support', module: 'support-annotations'
+        exclude group: 'com.android.support', module: 'support-core-utils'
     }
     
     testImplementation 'junit:junit:4.13.2'
@@ -59,9 +72,20 @@ dependencies {
 
 configurations.all {
     resolutionStrategy {
-        exclude group: 'com.android.support', module: 'support-compat'
-        exclude group: 'com.android.support', module: 'support-v4'
+        // Force exclude all support library modules
         exclude group: 'com.android.support'
+        
+        // Force specific AndroidX versions
+        force 'androidx.core:core:1.12.0'
+        force 'androidx.core:core-ktx:1.12.0'
+        force 'androidx.appcompat:appcompat:1.6.1'
+        
+        // Replace any support library with AndroidX equivalent
+        dependencySubstitution {
+            substitute module('com.android.support:support-compat') using module('androidx.core:core:1.12.0')
+            substitute module('com.android.support:support-v4') using module('androidx.legacy:legacy-support-v4:1.0.0')
+            substitute module('com.android.support:support-annotations') using module('androidx.annotation:annotation:1.7.1')
+        }
     }
 }
 

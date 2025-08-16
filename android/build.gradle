@@ -14,6 +14,19 @@ allprojects {
         mavenCentral()
         maven { url 'https://jitpack.io' }
     }
+    
+    // Global dependency resolution
+    configurations.all {
+        resolutionStrategy {
+            // Force exclude all Android Support Libraries globally
+            exclude group: 'com.android.support'
+            
+            // Force specific AndroidX versions across all modules
+            force 'androidx.core:core:1.12.0'
+            force 'androidx.core:core-ktx:1.12.0'
+            force 'androidx.appcompat:appcompat:1.6.1'
+        }
+    }
 }
 
 task clean(type: Delete) {
