@@ -1,4 +1,5 @@
 run = "npm run dev"
+modules = ["nodejs-20"]
 [nix]
 channel = "stable-25_05"
 
@@ -15,4 +16,12 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "echo \"Capacitor project ready for Android build\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"To build: npm run build\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"To open Android Studio: npm run open:android\""
