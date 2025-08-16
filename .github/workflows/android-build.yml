@@ -70,14 +70,11 @@ jobs:
         if [ -f android/gradlew ]; then
           chmod +x android/gradlew
         else
-          echo "gradlew not found, syncing Capacitor to generate it..."
+          echo "gradlew not found, regenerating Android platform..."
+          rm -rf android
+          npx cap add android
           npx cap sync android
-          if [ -f android/gradlew ]; then
-            chmod +x android/gradlew
-          else
-            echo "gradlew still not found after sync, this may indicate an issue with the Android platform"
-            exit 1
-          fi
+          chmod +x android/gradlew
         fi
       
     - name: Build debug APK
