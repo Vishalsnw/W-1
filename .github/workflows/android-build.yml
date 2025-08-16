@@ -28,12 +28,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # Install Gradle (so we can run gradle directly)
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: '8.2.1'
-
       - name: Cache node modules
         uses: actions/cache@v4
         with:
@@ -45,17 +39,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build web assets
+        run: npm run build
+
       - name: Sync Capacitor Android
         run: npx cap sync android
 
-      - name: Create asset directories
-        run: mkdir -p android/app/src/main/assets
-
       - name: Clean build cache
-        run: gradle -p android clean
+        run: ./gradlew -p android clean
 
       - name: Build Debug APK
-        run: gradle -p android assembleDebug --stacktrace --refresh-dependencies
+        run: ./gradlew -p android assembleDebug --stacktrace --refresh-dependencies
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -66,7 +60,7 @@ jobs:
       - name: Build Release APK (if keystore exists)
         run: |
           if [ -f android/app/whatsorder-release-key.keystore ]; then
-            gradle -p android assembleRelease --stacktrace --refresh-dependencies
+            ./gradlew -p android assembleRelease --stacktrace --refresh-dependencies
           else
             echo "⚠️ No keystore found, skipping release build"
           fi
