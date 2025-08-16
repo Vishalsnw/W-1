@@ -1,8 +1,7 @@
-
 name: Build Android APK
 
-# Note: This build runs on GitHub Actions, not on Replit
-# The APK will be built using GitHub's runners and available as artifacts
+# This workflow runs on GitHub Actions
+# It builds a Debug APK always, and Release APK if keystore is available
 
 on:
   push:
@@ -15,109 +14,116 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      # Setup Node.js (for Capacitor + Web build)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
         
-    - name: Setup Java JDK
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      # Setup Java JDK
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
         
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      # Setup Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
       
-    - name: Cache node modules
-      uses: actions/cache@v4
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+      # Cache node_modules
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
           
-    - name: Install dependencies
-      run: |
-        npm install
-        npm install -D typescript
+      # Install NPM dependencies
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install -D typescript
       
-    - name: Initialize Capacitor (if needed)
-      run: |
-        if [ ! -f capacitor.config.ts ]; then
-          npx cap init "WhatsOrder" "com.vishal.whatsorder"
-        fi
+      # Ensure Capacitor project is initialized
+      - name: Initialize Capacitor
+        run: |
+          if [ ! -f capacitor.config.ts ]; then
+            npx cap init "WhatsOrder" "com.vishal.whatsorder"
+          fi
       
-    - name: Add Android platform (if needed)
-      run: |
-        if [ ! -d android ]; then
-          npx cap add android
-        fi
+      # Ensure Android platform exists
+      - name: Add Android platform
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
       
-    - name: Create web directory
-      run: |
-        mkdir -p www
-        mkdir -p android/app/src/main/assets
+      # Create required directories
+      - name: Create web and asset directories
+        run: |
+          mkdir -p www
+          mkdir -p android/app/src/main/assets
         
-    - name: Sync Capacitor
-      run: npx cap sync android
+      # Sync Capacitor (copies web → android)
+      - name: Sync Capacitor
+        run: npx cap sync android
       
-    - name: Check if gradlew exists and make executable
-      run: |
-        if [ -f android/gradlew ]; then
-          chmod +x android/gradlew
-        else
-          echo "gradlew not found, regenerating Android platform..."
-          rm -rf android
-          npx cap add android
-          npx cap sync android
-          chmod +x android/gradlew
-        fi
+      # Ensure gradlew exists and executable
+      - name: Ensure gradlew exists
+        run: |
+          cd android
+          if [ -f gradlew ]; then
+            echo "✅ gradlew found"
+            chmod +x gradlew
+          else
+            echo "⚠️ gradlew missing, regenerating..."
+            gradle wrapper
+            chmod +x gradlew
+          fi
+          cd ..
       
-    - name: Clean build cache and dependencies
-      run: |
-        cd android
-        ./gradlew clean
-        rm -rf .gradle
-        rm -rf build
-        rm -rf app/build
+      # Clean build cache
+      - name: Clean build cache
+        run: |
+          cd android
+          ./gradlew clean
+          rm -rf .gradle build app/build
         
-    - name: Build debug APK with clean slate
-      run: |
-        cd android
-        ./gradlew assembleDebug --refresh-dependencies --stacktrace
+      # Build Debug APK
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace --refresh-dependencies
         
-    - name: Fallback build if first attempt fails
-      if: failure()
-      run: |
-        cd android
-        ./gradlew clean
-        ./gradlew assembleDebug --no-daemon --stacktrace --info
+      # Upload Debug APK
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsorder-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
         
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: whatsorder-debug-apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        # APK built on GitHub Actions, download from Actions tab
-        
-    - name: Build release APK (if keystore exists)
-      run: |
-        cd android
-        if [ -f app/whatsorder-release-key.keystore ]; then
-          ./gradlew assembleRelease --refresh-dependencies
-        else
-          echo "Release keystore not found, skipping release build"
-        fi
-      continue-on-error: true
+      # Build Release APK (if keystore exists)
+      - name: Build Release APK
+        run: |
+          cd android
+          if [ -f app/whatsorder-release-key.keystore ]; then
+            ./gradlew assembleRelease --stacktrace --refresh-dependencies
+          else
+            echo "⚠️ No keystore found, skipping release build"
+          fi
+        continue-on-error: true
       
-    - name: Upload release APK artifact
-      uses: actions/upload-artifact@v4
-      if: success()
-      with:
-        name: whatsorder-release-apk
-        path: android/app/build/outputs/apk/release/app-release.apk
-      continue-on-error: true
+      # Upload Release APK
+      - name: Upload Release APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsorder-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+        continue-on-error: true
