@@ -55,6 +55,11 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
+      # Generate gradlew if missing
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 8.2.1 --distribution-type all
+        working-directory: android
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
         working-directory: android
