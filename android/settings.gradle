@@ -10,15 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
     }
 }
 
 rootProject.name = "WhatsOrder"
-
 include ':app'
-include ':capacitor-android'
-include ':capacitor-camera'
-
-project(':capacitor-android').projectDir = file('../node_modules/@capacitor/android/capacitor')
-project(':capacitor-camera').projectDir = file('../node_modules/@capacitor/camera/android')
