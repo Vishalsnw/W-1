@@ -46,10 +46,14 @@ jobs:
         run: npx cap sync android
 
       - name: Clean build cache
-        run: ./gradlew -p android clean
+        run: |
+          cd android
+          ./gradlew clean
 
       - name: Build Debug APK
-        run: ./gradlew -p android assembleDebug --stacktrace --refresh-dependencies
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace --refresh-dependencies
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -60,7 +64,8 @@ jobs:
       - name: Build Release APK (if keystore exists)
         run: |
           if [ -f android/app/whatsorder-release-key.keystore ]; then
-            ./gradlew -p android assembleRelease --stacktrace --refresh-dependencies
+            cd android
+            ./gradlew assembleRelease --stacktrace --refresh-dependencies
           else
             echo "⚠️ No keystore found, skipping release build"
           fi
