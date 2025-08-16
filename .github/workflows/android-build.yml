@@ -88,14 +88,14 @@ jobs:
     - name: Build debug APK with clean slate
       run: |
         cd android
-        ./gradlew assembleDebug --refresh-dependencies --recompile-scripts
+        ./gradlew assembleDebug --refresh-dependencies --stacktrace
         
     - name: Fallback build if first attempt fails
       if: failure()
       run: |
         cd android
         ./gradlew clean
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        ./gradlew assembleDebug --no-daemon --stacktrace --info
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
