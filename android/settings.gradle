@@ -17,9 +17,9 @@ dependencyResolutionManagement {
 rootProject.name = "WhatsOrder"
 
 include ':app'
-include ':capacitor-android'
-include ':capacitor-camera'
 
-// Correct relative paths to Capacitor modules
-project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
-project(':capacitor-camera').projectDir = new File('../node_modules/@capacitor/camera/android')
+// Removed non-existent Capacitor modules
+// include ':capacitor-android'
+// include ':capacitor-camera'
+// project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
+// project(':capacitor-camera').projectDir = new File('../node_modules/@capacitor/camera/android')
