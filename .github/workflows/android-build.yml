@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # Setup Node.js (for Capacitor + Web build)
+      # Setup Node.js (if needed for web build)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -46,20 +46,12 @@ jobs:
           
       # Install NPM dependencies
       - name: Install dependencies
-        run: |
-          npm install
-          npm install -D typescript
+        run: npm install
       
-      # Create required directories
-      - name: Create web and asset directories
-        run: |
-          mkdir -p www
-          mkdir -p android/app/src/main/assets
+      # Create required directories (if needed)
+      - name: Create asset directories
+        run: mkdir -p android/app/src/main/assets
         
-      # Sync Capacitor (copies web → android)
-      - name: Sync Capacitor
-        run: npx cap sync android
-      
       # Generate Gradle wrapper if missing
       - name: Generate Gradle wrapper
         run: |
