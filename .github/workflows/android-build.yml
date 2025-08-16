@@ -57,6 +57,11 @@ jobs:
           npx cap add android
         fi
       
+    - name: Create web directory
+      run: |
+        mkdir -p www
+        mkdir -p android/app/src/main/assets
+        
     - name: Sync Capacitor
       run: npx cap sync android
       

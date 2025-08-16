@@ -4,7 +4,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.vishal.whatsorder',
   appName: 'WhatsOrder',
-  webDir: 'dist',
+  webDir: 'www',
   server: {
     url: 'https://whats-order-osr3.vercel.app',
     cleartext: false
