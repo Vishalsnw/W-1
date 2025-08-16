@@ -78,14 +78,11 @@ jobs:
       - name: Ensure gradlew exists
         run: |
           cd android
-          if [ -f gradlew ]; then
-            echo "✅ gradlew found"
-            chmod +x gradlew
-          else
-            echo "⚠️ gradlew missing, regenerating..."
+          if [ ! -f gradlew ]; then
+            echo "⚠️ gradlew missing, generating wrapper..."
             gradle wrapper
-            chmod +x gradlew
           fi
+          chmod +x gradlew
           cd ..
       
       # Clean build cache
