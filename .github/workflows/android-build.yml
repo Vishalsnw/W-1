@@ -1,6 +1,9 @@
 
 name: Build Android APK
 
+# Note: This build runs on GitHub Actions, not on Replit
+# The APK will be built using GitHub's runners and available as artifacts
+
 on:
   push:
     branches: [ main, master ]
@@ -68,6 +71,7 @@ jobs:
       with:
         name: whatsorder-debug-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
+        # APK built on GitHub Actions, download from Actions tab
         
     - name: Build release APK (if keystore exists)
       run: |
