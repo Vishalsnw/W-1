@@ -41,7 +41,9 @@ jobs:
           ${{ runner.os }}-node-
           
     - name: Install dependencies
-      run: npm install
+      run: |
+        npm install
+        npm install -D typescript
       
     - name: Initialize Capacitor (if needed)
       run: |
