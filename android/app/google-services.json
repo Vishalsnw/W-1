@@ -1,0 +1,31 @@
+
+{
+  "project_info": {
+    "project_number": "735632166574",
+    "project_id": "whatsorder-f2c7b",
+    "storage_bucket": "whatsorder-f2c7b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:735632166574:android:b1f144658f8894b448673f",
+        "android_client_info": {
+          "package_name": "com.vishal.whatsorder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      },
+      "admob_app_id": "ca-app-pub-5538218540896625~5131951256"
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,7 +5,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 
 // Initialize Google Auth
 GoogleAuth.initialize({
-  clientId: 'YOUR_FIREBASE_WEB_CLIENT_ID',
+  clientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
   scopes: ['profile', 'email'],
   grantOfflineAccess: true,
 });

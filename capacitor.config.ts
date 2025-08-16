@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   plugins: {
     GoogleAuth: {
       scopes: ['profile', 'email'],
-      serverClientId: 'YOUR_FIREBASE_WEB_CLIENT_ID',
+      serverClientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
       forceCodeForRefreshToken: true
     },
     Camera: {
