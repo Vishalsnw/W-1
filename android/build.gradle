@@ -19,8 +19,8 @@ allprojects {
     }
 
     configurations.all {
+        // Force versions without iterating over dependencies
         resolutionStrategy {
-            // Force specific AndroidX versions safely
             force 'androidx.core:core:1.12.0'
             force 'androidx.core:core-ktx:1.12.0'
             force 'androidx.appcompat:appcompat:1.6.1'
