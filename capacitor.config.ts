@@ -1,4 +1,3 @@
-
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -6,21 +5,7 @@ const config: CapacitorConfig = {
   appName: 'WhatsOrder',
   webDir: 'www',
   server: {
-    url: 'https://whats-order-osr3.vercel.app',
-    cleartext: false
-  },
-  android: {
-    scheme: 'https'
-  },
-  plugins: {
-    GoogleAuth: {
-      scopes: ['profile', 'email'],
-      serverClientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
-      forceCodeForRefreshToken: true
-    },
-    Camera: {
-      permissions: ['camera', 'photos']
-    }
+    androidScheme: 'https'
   }
 };
 
