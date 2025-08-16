@@ -15,4 +15,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "WhatsOrder"
-include(":app")
+
+include ':app'
+include ':capacitor-android'
+include ':capacitor-camera'
+include ':capacitor-filesystem'
