@@ -1,4 +1,4 @@
-
+ 
 # WhatsOrder Android App - Capacitor Setup
 
 ![Build Status](https://github.com/your-username/whatsorder/workflows/Build%20Android%20APK/badge.svg)
