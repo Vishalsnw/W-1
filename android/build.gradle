@@ -5,43 +5,32 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.1'
-        classpath 'com.google.gms:google-services:4.4.1' // updated version
+        classpath 'com.google.gms:google-services:4.4.1'
     }
 }
 
 apply from: "variables.gradle"
 
-// Repositories for all projects
 allprojects {
     repositories {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
     }
-}
 
-// Safer global dependency resolution (applied after evaluation)
-subprojects {
-    afterEvaluate { project ->
-        project.configurations.matching { it.canBeResolved }.all { config ->
-            config.resolutionStrategy {
-                // Force exclude all Android Support Libraries globally
-                eachDependency { dep ->
-                    if (dep.group == 'com.android.support') {
-                        dep.useTarget group: dep.group, name: dep.name, version: '0' // effectively excludes
-                    }
-                }
-
-                // Force specific AndroidX versions
-                force 'androidx.core:core:1.12.0'
-                force 'androidx.core:core-ktx:1.12.0'
-                force 'androidx.appcompat:appcompat:1.6.1'
-            }
+    configurations.all {
+        resolutionStrategy {
+            // Force specific AndroidX versions safely
+            force 'androidx.core:core:1.12.0'
+            force 'androidx.core:core-ktx:1.12.0'
+            force 'androidx.appcompat:appcompat:1.6.1'
+            force 'androidx.activity:activity:1.8.2'
+            force 'com.google.android.material:material:1.11.0'
+            force 'androidx.constraintlayout:constraintlayout:2.1.4'
         }
     }
 }
 
-// Clean task
 tasks.register("clean", Delete) {
     delete(rootProject.buildDir)
 }
