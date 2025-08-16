@@ -3,14 +3,16 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven { url 'https://jitpack.io' } // moved here instead of build.gradle
     }
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS) // ✅ prevents the conflict
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' } // keep jitpack here too
     }
 }
 
