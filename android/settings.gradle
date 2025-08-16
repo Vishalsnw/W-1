@@ -17,4 +17,9 @@ dependencyResolutionManagement {
 rootProject.name = "WhatsOrder"
 
 include ':app'
+include ':capacitor-android'
+include ':capacitor-camera'
+
+project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
+project(':capacitor-camera').projectDir = new File('../node_modules/@capacitor/camera/android')
 
