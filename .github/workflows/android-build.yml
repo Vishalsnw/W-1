@@ -19,7 +19,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
         
     - name: Setup Java JDK
       uses: actions/setup-java@v4
@@ -30,11 +29,28 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+          
     - name: Install dependencies
       run: npm install
       
-    - name: Add Android platform
-      run: npx cap add android
+    - name: Initialize Capacitor (if needed)
+      run: |
+        if [ ! -f capacitor.config.ts ]; then
+          npx cap init "WhatsOrder" "com.vishal.whatsorder"
+        fi
+      
+    - name: Add Android platform (if needed)
+      run: |
+        if [ ! -d android ]; then
+          npx cap add android
+        fi
       
     - name: Sync Capacitor
       run: npx cap sync android
