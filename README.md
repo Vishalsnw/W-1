@@ -159,3 +159,6 @@ whatsorder-capacitor/
 - Add actual SHA-1/SHA-256 fingerprints to Firebase
 - Test on physical device for camera/file upload features
 - The app will load your Vercel URL (https://whats-order-osr3.vercel.app) in WebView
+
+---
+*Last updated: December 2024*
