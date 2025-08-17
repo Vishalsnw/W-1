@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -16,21 +16,29 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
-        
+
         <activity
             android:exported="true"
             android:launchMode="singleTask"
             android:name="com.vishal.whatsorder.MainActivity"
             android:theme="@style/AppTheme.NoActionBarLaunch">
 
-            <!-- Launcher intent only -->
+            <!-- Launcher intent -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Handle in-app URLs -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" /> <!-- Match Capacitor config androidScheme -->
+            </intent-filter>
+
         </activity>
-        
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.vishal.whatsorder.fileprovider"
@@ -40,6 +48,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-        
+
     </application>
 </manifest>
