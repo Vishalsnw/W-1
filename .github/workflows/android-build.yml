@@ -88,7 +88,16 @@ jobs:
       - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace --info --refresh-dependencies
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ BUILD FAILED - Last 50 lines of build output:"
+            echo "================================================"
+            tail -50 build-output.log
+            echo "================================================"
+            echo "🔍 Searching for error patterns..."
+            grep -i "error\|failed\|exception" build-output.log | tail -10 || echo "No specific error patterns found"
+            exit 1
+          fi
         env:
           GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false"
 
@@ -103,7 +112,12 @@ jobs:
         run: |
           cd android
           if [ -f app/whatsorder-release-key.keystore ]; then
-            ./gradlew assembleRelease --stacktrace --info --refresh-dependencies
+            ./gradlew assembleRelease --stacktrace 2>&1 | tee release-build-output.log
+            if [ ${PIPESTATUS[0]} -ne 0 ]; then
+              echo "❌ RELEASE BUILD FAILED - Last 30 lines:"
+              tail -30 release-build-output.log
+              grep -i "error\|failed\|exception" release-build-output.log | tail -5 || echo "No specific error patterns found"
+            fi
           else
             echo "⚠️ No keystore found, skipping release build"
           fi
@@ -120,12 +134,37 @@ jobs:
           retention-days: 30
         continue-on-error: true
 
+      - name: Show Build Error Summary
+        if: failure()
+        run: |
+          cd android
+          echo "🔍 BUILD ERROR SUMMARY"
+          echo "======================"
+          
+          # Check if build output exists and show relevant errors
+          if [ -f build-output.log ]; then
+            echo "📋 Key Error Messages:"
+            grep -i "error\|failed\|exception\|could not resolve\|missing\|not found" build-output.log | head -10
+            echo ""
+            echo "📋 Last 20 lines of build output:"
+            tail -20 build-output.log
+          fi
+          
+          # Check Gradle daemon logs for additional info
+          if [ -f ~/.gradle/daemon/*/daemon-*.out.log ]; then
+            echo ""
+            echo "📋 Recent Gradle daemon errors:"
+            grep -i "error\|exception" ~/.gradle/daemon/*/daemon-*.out.log | tail -5 || echo "No daemon errors found"
+          fi
+
       - name: Upload Build Logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
           path: |
+            android/build-output.log
+            android/release-build-output.log
             android/app/build/outputs/logs/
             android/build/outputs/logs/
           retention-days: 7
