@@ -4,10 +4,26 @@
 	"webDir": "www",
 	"server": {
 		"androidScheme": "https",
-		"allowNavigation": ["https://whats-order-osr3.vercel.app"]
+		"allowNavigation": [
+			"https://whats-order-osr3.vercel.app",
+			"https://whats-order-osr3.vercel.app/*"
+		],
+		"cleartext": true,
+		"allowExternalUrls": true
 	},
 	"android": {
 		"allowMixedContent": true,
-		"captureInput": true
+		"captureInput": true,
+		"webContentsDebuggingEnabled": true
+	},
+	"plugins": {
+		"Browser": {
+			"presentationStyle": "fullscreen"
+		},
+		"AdMob": {
+			"appId": "ca-app-pub-5538218540896625~5131951256",
+			"testingDevices": [],
+			"initializeForTesting": false
+		}
 	}
 }

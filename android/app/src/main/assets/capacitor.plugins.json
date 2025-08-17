@@ -1,19 +1,15 @@
 [
 	{
+		"pkg": "@capacitor-community/admob",
+		"classpath": "com.getcapacitor.community.admob.AdMob"
+	},
+	{
 		"pkg": "@capacitor/camera",
 		"classpath": "com.capacitorjs.plugins.camera.CameraPlugin"
 	},
 	{
 		"pkg": "@capacitor/filesystem",
 		"classpath": "com.capacitorjs.plugins.filesystem.FilesystemPlugin"
-	},
-	{
-		"pkg": "@capacitor/browser",
-		"classpath": "com.capacitorjs.plugins.browser.BrowserPlugin"
-	},
-	{
-		"pkg": "@capacitor-community/admob",
-		"classpath": "com.capacitorcommunity.admob.AdMobPlugin"
 	},
 	{
 		"pkg": "@codetrix-studio/capacitor-google-auth",
