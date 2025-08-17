@@ -1,3 +1,4 @@
+
 name: Build Android APK
 
 on:
@@ -5,6 +6,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,6 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
@@ -27,14 +30,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Cache node modules
-        uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          api-level: 33
+          build-tools: 33.0.2
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -42,54 +40,76 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
+            android/.gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Install dependencies
-        run: npm install
+      - name: Clean install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install
 
-      - name: Install AdMob plugin
-        run: npm install @capacitor-community/admob
+      - name: Install required plugins
+        run: |
+          npm install @capacitor-community/admob@^7.0.3
+          npm install @capacitor/android@^5.7.8
+          npm install @capacitor/camera@^5.0.10
+          npm install @capacitor/filesystem@^5.2.2
+          npm install @codetrix-studio/capacitor-google-auth@^1.5.1
 
-      - name: Build web assets
-        run: npm run build
+      - name: Build and sync Capacitor
+        run: |
+          npm run build
+          npx cap sync android --force
 
-      - name: Sync Capacitor Android
-        run: npx cap sync android
+      - name: Verify Android configuration
+        run: |
+          ls -la android/app/src/main/assets/
+          cat android/app/src/main/assets/capacitor.config.json
+          cat android/app/src/main/assets/capacitor.plugins.json
 
-      # Generate gradlew if missing
       - name: Generate Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.2.1 --distribution-type all
-        working-directory: android
+        run: |
+          cd android
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.2.1 --distribution-type all
+          fi
+          chmod +x gradlew
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-        working-directory: android
+      - name: Clean Gradle cache
+        run: |
+          cd android
+          ./gradlew clean --stacktrace
 
-      - name: Clean build cache
-        run: ./gradlew clean
-        working-directory: android
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --refresh-dependencies
-        working-directory: android
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace --info --refresh-dependencies
+        env:
+          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false"
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: whatsorder-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
 
       - name: Build Release APK (if keystore exists)
         run: |
+          cd android
           if [ -f app/whatsorder-release-key.keystore ]; then
-            ./gradlew assembleRelease --stacktrace --refresh-dependencies
+            ./gradlew assembleRelease --stacktrace --info --refresh-dependencies
           else
             echo "⚠️ No keystore found, skipping release build"
           fi
-        working-directory: android
         continue-on-error: true
+        env:
+          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false"
 
       - name: Upload Release APK
         if: success()
@@ -97,4 +117,16 @@ jobs:
         with:
           name: whatsorder-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+        continue-on-error: true
+
+      - name: Upload Build Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            android/app/build/outputs/logs/
+            android/build/outputs/logs/
+          retention-days: 7
         continue-on-error: true

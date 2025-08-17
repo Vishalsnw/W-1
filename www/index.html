@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,7 +50,7 @@
             background: white;
             color-scheme: light;
         }
-        
+
         /* Force light theme on iframe content */
         #webview-frame::after {
             content: '';
@@ -95,40 +94,40 @@
         <h2>WhatsOrder</h2>
         <p>Loading your app...</p>
     </div>
-    
+
     <div id="error-container">
         <h2>Connection Error</h2>
         <p>Unable to load the app. Please check your internet connection.</p>
         <button class="retry-btn" onclick="retryLoad()">Retry</button>
     </div>
-    
+
     <iframe id="webview-frame" src="https://whats-order-osr3.vercel.app"></iframe>
-    
+
     <script>
         let loadTimeout;
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing app...');
-            
+
             // Set a timeout for loading
             loadTimeout = setTimeout(() => {
                 console.log('Load timeout reached');
                 showError();
             }, 15000);
-            
+
             // Initialize the iframe and native functions
             initializeApp();
         });
-        
+
         function initializeApp() {
             const iframe = document.getElementById('webview-frame');
-            
+
             // Handle successful load
             iframe.onload = function() {
                 console.log('Iframe loaded successfully');
                 clearTimeout(loadTimeout);
                 showSuccess();
-                
+
                 // Force light theme on iframe content
                 try {
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -152,7 +151,7 @@
                 } catch (e) {
                     console.log('Cannot access iframe content due to CORS');
                 }
-                
+
                 // Initialize native functions after successful load
                 setTimeout(() => {
                     initializeNativeFunctions();
@@ -160,14 +159,14 @@
                     setupExternalLinkHandling();
                 }, 1000);
             };
-            
+
             // Handle load error
             iframe.onerror = function() {
                 console.log('Iframe load error');
                 clearTimeout(loadTimeout);
                 showError();
             };
-            
+
             // Show the iframe after a minimum loading time
             setTimeout(() => {
                 if (iframe.contentDocument || iframe.contentWindow) {
@@ -175,32 +174,32 @@
                 }
             }, 3000);
         }
-        
+
         function showSuccess() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error-container').style.display = 'none';
             document.getElementById('webview-frame').style.display = 'block';
         }
-        
+
         function showError() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('webview-frame').style.display = 'none';
             document.getElementById('error-container').style.display = 'flex';
         }
-        
+
         function retryLoad() {
             document.getElementById('error-container').style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
-            
+
             const iframe = document.getElementById('webview-frame');
             iframe.src = iframe.src;
-            
+
             loadTimeout = setTimeout(showError, 15000);
         }
-        
+
         function initializeNativeFunctions() {
             console.log('Initializing native functions...');
-            
+
             // Make native functions available globally for the web app
             window.nativeGoogleAuth = {
                 signIn: async () => {
@@ -227,7 +226,7 @@
                     }
                 }
             };
-            
+
             window.nativeCamera = {
                 takePicture: async () => {
                     try {
@@ -266,14 +265,14 @@
                     }
                 }
             };
-            
+
             // Add external URL handling for WhatsApp, phone calls, etc.
             window.openExternalUrl = async (url) => {
                 try {
                     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
                         // For native environment, try Browser plugin first
                         if (window.Capacitor.Plugins.Browser) {
-                            await window.Capacitor.Plugins.Browser.open({ 
+                            await window.Capacitor.Plugins.Browser.open({
                                 url: url,
                                 presentationStyle: 'fullscreen'
                             });
@@ -295,18 +294,18 @@
                     }
                 }
             };
-            
+
             console.log('Native functions initialized');
         }
-        
+
         // AdMob Integration
         function initializeAdMob() {
             console.log('Initializing AdMob...');
-            
+
             // Check if we're in a native environment
             if (window.Capacitor && window.Capacitor.isNativePlatform()) {
                 const AdMob = window.Capacitor.Plugins.AdMob;
-                
+
                 if (AdMob) {
                     // Initialize AdMob
                     AdMob.initialize({
@@ -315,14 +314,14 @@
                         initializeForTesting: false
                     }).then(() => {
                         console.log('AdMob initialized successfully');
-                        
+
                         // Show banner ad after initialization
                         setTimeout(() => {
                             if (window.showBannerAd) {
                                 showBannerAd();
                             }
                         }, 3000);
-                        
+
                         // Prepare interstitial ad
                         setTimeout(() => {
                             if (window.prepareInterstitialAd) {
@@ -338,7 +337,7 @@
             } else {
                 console.log('Not in native environment, skipping AdMob');
             }
-                
+
                 // Create banner ad functions
                 window.showBannerAd = async () => {
                     try {
@@ -354,7 +353,7 @@
                         console.error('Banner ad error:', error);
                     }
                 };
-                
+
                 window.hideBannerAd = async () => {
                     try {
                         await AdMob.hideBanner();
@@ -363,7 +362,7 @@
                         console.error('Hide banner error:', error);
                     }
                 };
-                
+
                 // Create interstitial ad functions
                 window.prepareInterstitialAd = async () => {
                     try {
@@ -376,7 +375,7 @@
                         console.error('Prepare interstitial error:', error);
                     }
                 };
-                
+
                 window.showInterstitialAd = async () => {
                     try {
                         await AdMob.showInterstitial();
@@ -387,30 +386,30 @@
                         console.error('Show interstitial error:', error);
                     }
                 };
-                
+
                 console.log('AdMob functions created');
             } else {
                 console.log('AdMob plugin not available');
             }
         }
-        
+
         // Setup external link handling
         function setupExternalLinkHandling() {
             console.log('Setting up external link handling...');
-            
+
             // Listen for messages from the iframe
             window.addEventListener('message', function(event) {
                 if (event.origin !== 'https://whats-order-osr3.vercel.app') {
                     return;
                 }
-                
+
                 if (event.data.type === 'OPEN_EXTERNAL_URL') {
                     openExternalUrl(event.data.url);
                 } else if (event.data.type === 'SHOW_INTERSTITIAL_AD') {
                     showInterstitialAd();
                 }
             });
-            
+
             console.log('External link handling setup complete');
         }
     </script>
