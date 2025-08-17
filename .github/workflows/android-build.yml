@@ -49,6 +49,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install AdMob plugin
+        run: npm install @capacitor-community/admob
+
       - name: Build web assets
         run: npm run build
 

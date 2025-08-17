@@ -16,11 +16,13 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: true
   },
   plugins: {
-    CapacitorBrowser: {
-      presentationStyle: 'popover'
+    Browser: {
+      presentationStyle: 'fullscreen'
     },
     AdMob: {
-      appId: 'ca-app-pub-5538218540896625~5131951256'
+      appId: 'ca-app-pub-5538218540896625~5131951256',
+      testingDevices: [],
+      initializeForTesting: false
     }
   }
 };
