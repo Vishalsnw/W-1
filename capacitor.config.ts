@@ -17,7 +17,10 @@ const config: CapacitorConfig = {
   },
   plugins: {
     Browser: {
-      presentationStyle: 'fullscreen'
+      presentationStyle: 'fullscreen',
+      toolbarColor: '#ffffff',
+      showTitle: true,
+      enableViewportScale: true
     },
     AdMob: {
       appId: 'ca-app-pub-5538218540896625~5131951256',
