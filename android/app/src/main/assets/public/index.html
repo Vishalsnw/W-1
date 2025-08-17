@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,12 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsOrder</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #ffffff;
-            color: #000000;
+            overflow: hidden;
+            background: #f5f5f5;
+            color: #333333 !important;
+        }
+
+        /* Force light theme styles */
+        * {
+            color: #333333 !important;
+            background-color: transparent !important;
+        }
+
+        iframe {
+            background: white !important;
         }
         #loading {
             display: flex;
@@ -48,6 +63,20 @@
             border: none;
             display: none;
             background: white;
+            color-scheme: light;
+        }
+
+        /* Force light theme on iframe content */
+        #webview-frame::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            pointer-events: none;
+            z-index: -1;
         }
         #error-container {
             display: none;
@@ -80,88 +109,110 @@
         <h2>WhatsOrder</h2>
         <p>Loading your app...</p>
     </div>
-    
+
     <div id="error-container">
         <h2>Connection Error</h2>
         <p>Unable to load the app. Please check your internet connection.</p>
         <button class="retry-btn" onclick="retryLoad()">Retry</button>
     </div>
-    
+
     <iframe id="webview-frame" src="https://whats-order-osr3.vercel.app"></iframe>
-    
+
     <script>
         let loadTimeout;
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing app...');
-            
+
             // Set a timeout for loading
             loadTimeout = setTimeout(() => {
                 console.log('Load timeout reached');
                 showError();
-            }, 15000);
-            
+            }, 10000);
+
             // Initialize the iframe and native functions
             initializeApp();
         });
-        
+
         function initializeApp() {
             const iframe = document.getElementById('webview-frame');
-            
+
+            // Initialize native functions immediately
+            initializeNativeFunctions();
+            initializeAdMob();
+            setupExternalLinkHandling();
+
             // Handle successful load
             iframe.onload = function() {
                 console.log('Iframe loaded successfully');
                 clearTimeout(loadTimeout);
-                showSuccess();
                 
-                // Initialize native functions after successful load
-                setTimeout(() => {
-                    initializeNativeFunctions();
-                    initializeAdMob();
-                    setupExternalLinkHandling();
-                }, 1000);
+                // Force light theme in iframe
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const style = iframeDoc.createElement('style');
+                    style.textContent = `
+                        * { 
+                            color: #333333 !important; 
+                            background-color: white !important; 
+                        }
+                        body { 
+                            background: white !important; 
+                            color: #333333 !important; 
+                        }
+                        .dark, [data-theme="dark"] { 
+                            background: white !important; 
+                            color: #333333 !important; 
+                        }
+                    `;
+                    iframeDoc.head.appendChild(style);
+                } catch (e) {
+                    console.log('Could not inject theme styles:', e);
+                }
+
+                showSuccess();
             };
-            
+
             // Handle load error
             iframe.onerror = function() {
                 console.log('Iframe load error');
                 clearTimeout(loadTimeout);
                 showError();
             };
-            
-            // Show the iframe after a minimum loading time
+
+            // Fallback - show iframe after minimum loading time even if onload doesn't fire
             setTimeout(() => {
-                if (iframe.contentDocument || iframe.contentWindow) {
-                    showSuccess();
-                }
-            }, 3000);
+                console.log('Fallback timer - showing iframe');
+                clearTimeout(loadTimeout);
+                showSuccess();
+            }, 5000);
         }
-        
+
         function showSuccess() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error-container').style.display = 'none';
             document.getElementById('webview-frame').style.display = 'block';
         }
-        
+
         function showError() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('webview-frame').style.display = 'none';
             document.getElementById('error-container').style.display = 'flex';
         }
-        
+
         function retryLoad() {
             document.getElementById('error-container').style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
-            
+
             const iframe = document.getElementById('webview-frame');
             iframe.src = iframe.src;
-            
+
             loadTimeout = setTimeout(showError, 15000);
         }
-        
+
         function initializeNativeFunctions() {
             console.log('Initializing native functions...');
-            
+
             // Make native functions available globally for the web app
             window.nativeGoogleAuth = {
                 signIn: async () => {
@@ -188,7 +239,7 @@
                     }
                 }
             };
-            
+
             window.nativeCamera = {
                 takePicture: async () => {
                     try {
@@ -227,127 +278,147 @@
                     }
                 }
             };
-            
+
             // Add external URL handling for WhatsApp, phone calls, etc.
             window.openExternalUrl = async (url) => {
                 try {
-                    if (window.Capacitor && window.Capacitor.Plugins.Browser) {
-                        await window.Capacitor.Plugins.Browser.open({ 
-                            url: url,
-                            presentationStyle: 'fullscreen'
-                        });
+                    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+                        // For native environment, try Browser plugin first
+                        if (window.Capacitor.Plugins.Browser) {
+                            await window.Capacitor.Plugins.Browser.open({
+                                url: url,
+                                presentationStyle: 'fullscreen'
+                            });
+                        } else {
+                            // Use native app intent for WhatsApp, phone, etc.
+                            window.open(url, '_system');
+                        }
                     } else {
                         // Fallback for web browser testing
                         window.open(url, '_blank');
                     }
                 } catch (error) {
                     console.error('Error opening external URL:', error);
-                    // Final fallback
-                    window.open(url, '_blank');
+                    // Final fallback - use system browser
+                    try {
+                        window.open(url, '_system');
+                    } catch (e) {
+                        window.open(url, '_blank');
+                    }
                 }
             };
-            
+
             console.log('Native functions initialized');
         }
-        
+
         // AdMob Integration
         function initializeAdMob() {
             console.log('Initializing AdMob...');
-            
-            if (window.Capacitor && window.Capacitor.Plugins.AdMob) {
+
+            // Check if we're in a native environment
+            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
                 const AdMob = window.Capacitor.Plugins.AdMob;
-                
-                // Initialize AdMob
-                AdMob.initialize({
-                    requestTrackingAuthorization: true,
-                    testingDevices: [],
-                    initializeForTesting: false
-                }).then(() => {
-                    console.log('AdMob initialized successfully');
-                    
-                    // Show banner ad after initialization
-                    setTimeout(() => {
-                        showBannerAd();
-                    }, 2000);
-                    
-                    // Prepare interstitial ad
-                    prepareInterstitialAd();
-                }).catch(error => {
-                    console.error('AdMob initialization error:', error);
-                });
-                
-                // Create banner ad functions
-                window.showBannerAd = async () => {
-                    try {
-                        await AdMob.showBanner({
-                            adId: 'ca-app-pub-5538218540896625/8498698237',
-                            adSize: 'BANNER',
-                            position: 'BOTTOM_CENTER',
-                            margin: 0,
-                            isTesting: false
-                        });
-                        console.log('Banner ad shown');
-                    } catch (error) {
-                        console.error('Banner ad error:', error);
-                    }
-                };
-                
-                window.hideBannerAd = async () => {
-                    try {
-                        await AdMob.hideBanner();
-                        console.log('Banner ad hidden');
-                    } catch (error) {
-                        console.error('Hide banner error:', error);
-                    }
-                };
-                
-                // Create interstitial ad functions
-                window.prepareInterstitialAd = async () => {
-                    try {
-                        await AdMob.prepareInterstitial({
-                            adId: 'ca-app-pub-5538218540896625/8673958054',
-                            isTesting: false
-                        });
-                        console.log('Interstitial ad prepared');
-                    } catch (error) {
-                        console.error('Prepare interstitial error:', error);
-                    }
-                };
-                
-                window.showInterstitialAd = async () => {
-                    try {
-                        await AdMob.showInterstitial();
-                        console.log('Interstitial ad shown');
-                        // Prepare the next interstitial ad
-                        setTimeout(prepareInterstitialAd, 1000);
-                    } catch (error) {
-                        console.error('Show interstitial error:', error);
-                    }
-                };
-                
-                console.log('AdMob functions created');
+
+                if (AdMob) {
+                    // Create ad functions first
+                    window.showBannerAd = async () => {
+                        try {
+                            await AdMob.showBanner({
+                                adId: 'ca-app-pub-5538218540896625/8498698237',
+                                adSize: 'BANNER',
+                                position: 'BOTTOM_CENTER',
+                                margin: 0,
+                                isTesting: false
+                            });
+                            console.log('Banner ad shown');
+                        } catch (error) {
+                            console.error('Banner ad error:', error);
+                        }
+                    };
+
+                    window.hideBannerAd = async () => {
+                        try {
+                            await AdMob.hideBanner();
+                            console.log('Banner ad hidden');
+                        } catch (error) {
+                            console.error('Hide banner error:', error);
+                        }
+                    };
+
+                    window.prepareInterstitialAd = async () => {
+                        try {
+                            await AdMob.prepareInterstitial({
+                                adId: 'ca-app-pub-5538218540896625/8673958054',
+                                isTesting: false
+                            });
+                            console.log('Interstitial ad prepared');
+                        } catch (error) {
+                            console.error('Prepare interstitial error:', error);
+                        }
+                    };
+
+                    window.showInterstitialAd = async () => {
+                        try {
+                            await AdMob.showInterstitial();
+                            console.log('Interstitial ad shown');
+                            // Prepare the next interstitial ad
+                            setTimeout(() => window.prepareInterstitialAd(), 1000);
+                        } catch (error) {
+                            console.error('Show interstitial error:', error);
+                        }
+                    };
+
+                    // Initialize AdMob
+                    AdMob.initialize({
+                        requestTrackingAuthorization: true,
+                        testingDevices: [],
+                        initializeForTesting: false
+                    }).then(() => {
+                        console.log('AdMob initialized successfully');
+
+                        // Show banner ad after initialization
+                        setTimeout(() => {
+                            window.showBannerAd();
+                        }, 3000);
+
+                        // Prepare interstitial ad
+                        setTimeout(() => {
+                            window.prepareInterstitialAd();
+                        }, 1000);
+                    }).catch(error => {
+                        console.error('AdMob initialization error:', error);
+                    });
+                } else {
+                    console.log('AdMob plugin not found');
+                }
             } else {
-                console.log('AdMob plugin not available');
+                console.log('Not in native environment, skipping AdMob');
+                
+                // Create dummy functions for web testing
+                window.showBannerAd = () => console.log('Banner ad (web)');
+                window.hideBannerAd = () => console.log('Hide banner (web)');
+                window.prepareInterstitialAd = () => console.log('Prepare interstitial (web)');
+                window.showInterstitialAd = () => console.log('Show interstitial (web)');
             }
         }
-        
+
         // Setup external link handling
         function setupExternalLinkHandling() {
             console.log('Setting up external link handling...');
-            
+
             // Listen for messages from the iframe
             window.addEventListener('message', function(event) {
                 if (event.origin !== 'https://whats-order-osr3.vercel.app') {
                     return;
                 }
-                
+
                 if (event.data.type === 'OPEN_EXTERNAL_URL') {
                     openExternalUrl(event.data.url);
                 } else if (event.data.type === 'SHOW_INTERSTITIAL_AD') {
                     showInterstitialAd();
                 }
             });
-            
+
             console.log('External link handling setup complete');
         }
     </script>
