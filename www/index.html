@@ -5,15 +5,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsOrder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #webview-frame {
+            width: 100%;
+            height: 100vh;
+            border: none;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div id="app">
-        <h1>WhatsOrder</h1>
-        <p>Loading...</p>
+    <div id="loading">
+        <div class="spinner"></div>
+        <h2>WhatsOrder</h2>
+        <p>Loading your app...</p>
     </div>
-    <script>
-        // This will be replaced by your actual web app from Vercel
-        window.location.href = 'https://whats-order-osr3.vercel.app';
+    
+    <iframe id="webview-frame" src="https://whats-order-osr3.vercel.app"></iframe>
+    
+    <script type="module">
+        import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+        import { Camera } from '@capacitor/camera';
+        
+        // Initialize plugins when app loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading and show iframe after a short delay
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('webview-frame').style.display = 'block';
+            }, 2000);
+            
+            // Initialize Google Auth
+            GoogleAuth.initialize({
+                clientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
+                scopes: ['profile', 'email'],
+                grantOfflineAccess: true,
+            });
+        });
+        
+        // Make native functions available globally for the web app
+        window.nativeGoogleAuth = {
+            signIn: async () => {
+                try {
+                    const result = await GoogleAuth.signIn();
+                    return result;
+                } catch (error) {
+                    console.error('Google Sign In Error:', error);
+                    throw error;
+                }
+            },
+            signOut: async () => {
+                try {
+                    await GoogleAuth.signOut();
+                } catch (error) {
+                    console.error('Google Sign Out Error:', error);
+                    throw error;
+                }
+            }
+        };
+        
+        window.nativeCamera = {
+            takePicture: async () => {
+                try {
+                    const image = await Camera.getPhoto({
+                        quality: 90,
+                        allowEditing: true,
+                        resultType: 'DataUrl',
+                        source: 'Camera'
+                    });
+                    return image.dataUrl;
+                } catch (error) {
+                    console.error('Camera Error:', error);
+                    throw error;
+                }
+            },
+            selectFromGallery: async () => {
+                try {
+                    const image = await Camera.getPhoto({
+                        quality: 90,
+                        allowEditing: true,
+                        resultType: 'DataUrl',
+                        source: 'Photos'
+                    });
+                    return image.dataUrl;
+                } catch (error) {
+                    console.error('Gallery Error:', error);
+                    throw error;
+                }
+            }
+        };
     </script>
 </body>
 </html>

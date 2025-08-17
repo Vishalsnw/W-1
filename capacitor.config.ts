@@ -5,7 +5,12 @@ const config: CapacitorConfig = {
   appName: 'WhatsOrder',
   webDir: 'www',
   server: {
-    androidScheme: 'http'
+    androidScheme: 'https',
+    allowNavigation: ['https://whats-order-osr3.vercel.app']
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true
   }
 };
 
