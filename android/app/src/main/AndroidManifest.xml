@@ -23,18 +23,10 @@
             android:name="com.vishal.whatsorder.MainActivity"
             android:theme="@style/AppTheme.NoActionBarLaunch">
 
-            <!-- Launcher intent -->
+            <!-- Launcher intent only -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <!-- Handle in-app URLs -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" /> <!-- Match Capacitor config androidScheme -->
             </intent-filter>
 
         </activity>
