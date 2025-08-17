@@ -1,0 +1,6 @@
+{
+  "appId": "com.vishal.whatsorder",
+  "appName": "WhatsOrder",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
