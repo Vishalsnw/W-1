@@ -10,11 +10,12 @@ subprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        // JitPack only if you have Capacitor plugins or other dependencies hosted there
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
-// ✅ Clean task
+// ✅ Clean task for all projects
 tasks.register("clean", Delete) {
     delete(rootProject.buildDir)
 }
