@@ -49,19 +49,45 @@ jobs:
         run: |
           rm -rf node_modules package-lock.json
           npm install
-
-      - name: Install required plugins
+          
+      - name: Verify package.json dependencies
         run: |
-          npm install @capacitor-community/admob@^7.0.3
-          npm install @capacitor/android@^5.7.8
-          npm install @capacitor/camera@^5.0.10
-          npm install @capacitor/filesystem@^5.2.2
-          npm install @codetrix-studio/capacitor-google-auth@^1.5.1
-
-      - name: Build and sync Capacitor
+          echo "📋 Checking package.json dependencies:"
+          cat package.json | grep -A 20 '"dependencies"'
+          
+      - name: Install and verify plugins
         run: |
+          echo "📦 Installing Capacitor plugins..."
+          npm install @capacitor-community/admob@^7.0.3 --save
+          npm install @capacitor/android@^5.7.8 --save  
+          npm install @capacitor/camera@^5.0.10 --save
+          npm install @capacitor/filesystem@^5.2.2 --save
+          npm install @codetrix-studio/capacitor-google-auth@^1.5.1 --save
+          
+          echo "✅ Verifying installed plugins:"
+          ls -la node_modules/@capacitor-community/admob/ || echo "❌ AdMob not found"
+          ls -la node_modules/@capacitor/camera/ || echo "❌ Camera not found"
+          ls -la node_modules/@capacitor/filesystem/ || echo "❌ Filesystem not found"
+          ls -la node_modules/@codetrix-studio/capacitor-google-auth/ || echo "❌ GoogleAuth not found"
+
+      - name: Build and sync Capacitor with error checking
+        run: |
+          echo "🔧 Running Capacitor build and sync..."
           npm run build
-          npx cap sync android
+          
+          echo "🔄 Syncing Capacitor to Android..."
+          npx cap sync android --verbose
+          
+          echo "✅ Verifying sync results:"
+          ls -la android/app/src/main/assets/
+          
+          if [ -f "android/app/src/main/assets/capacitor.plugins.json" ]; then
+            echo "📋 Plugin configuration:"
+            cat android/app/src/main/assets/capacitor.plugins.json
+          else
+            echo "❌ capacitor.plugins.json not found!"
+            exit 1
+          fi
 
       - name: Verify Android configuration
         run: |
@@ -89,7 +115,8 @@ jobs:
         run: |
           cd android
           ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
             echo "❌ BUILD FAILED - Last 50 lines of build output:"
             echo "================================================"
             tail -50 build-output.log
@@ -113,7 +140,8 @@ jobs:
           cd android
           if [ -f app/whatsorder-release-key.keystore ]; then
             ./gradlew assembleRelease --stacktrace 2>&1 | tee release-build-output.log
-            if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            RELEASE_EXIT_CODE=${PIPESTATUS[0]}
+            if [ $RELEASE_EXIT_CODE -ne 0 ]; then
               echo "❌ RELEASE BUILD FAILED - Last 30 lines:"
               tail -30 release-build-output.log
               grep -i "error\|failed\|exception" release-build-output.log | tail -5 || echo "No specific error patterns found"
