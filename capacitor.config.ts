@@ -7,12 +7,21 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     allowNavigation: ['https://whats-order-osr3.vercel.app', 'https://whats-order-osr3.vercel.app/*'],
-    cleartext: true
+    cleartext: true,
+    allowExternalUrls: true
   },
   android: {
     allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: true
+  },
+  plugins: {
+    CapacitorBrowser: {
+      presentationStyle: 'popover'
+    },
+    AdMob: {
+      appId: 'ca-app-pub-5538218540896625~5131951256'
+    }
   }
 };
 

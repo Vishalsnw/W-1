@@ -17,7 +17,8 @@
             align-items: center;
             height: 100vh;
             flex-direction: column;
-            background: #f5f5f5;
+            background: #ffffff;
+            color: #333333;
         }
         .spinner {
             border: 4px solid #f3f3f3;
@@ -46,6 +47,8 @@
             height: 100vh;
             text-align: center;
             padding: 20px;
+            background: #ffffff;
+            color: #333333;
         }
         .retry-btn {
             background: #3498db;
@@ -160,6 +163,9 @@
                 // Import Capacitor plugins dynamically
                 import('https://cdn.jsdelivr.net/npm/@capacitor/core@latest/dist/index.js')
                     .then(() => {
+                        // Initialize AdMob
+                        initializeAdMob();
+                        
                         // Make native functions available globally
                         window.nativeGoogleAuth = {
                             signIn: async () => {
@@ -226,6 +232,20 @@
                             }
                         };
                         
+                        // Add external URL handling
+                        window.openExternalUrl = async (url) => {
+                            try {
+                                if (window.Capacitor && window.Capacitor.Plugins.Browser) {
+                                    await window.Capacitor.Plugins.Browser.open({ url: url });
+                                } else {
+                                    window.open(url, '_blank');
+                                }
+                            } catch (error) {
+                                console.error('Error opening external URL:', error);
+                                window.open(url, '_blank');
+                            }
+                        };
+                        
                         console.log('Native functions initialized');
                     })
                     .catch(error => {
@@ -233,6 +253,94 @@
                     });
             } else {
                 console.log('Capacitor not available - running in browser mode');
+            }
+        }
+        
+        // AdMob Integration
+        function initializeAdMob() {
+            if (window.Capacitor && window.Capacitor.Plugins.AdMob) {
+                const AdMob = window.Capacitor.Plugins.AdMob;
+                
+                // Initialize AdMob
+                AdMob.initialize({
+                    requestTrackingAuthorization: true,
+                    testingDevices: ['YOUR_TEST_DEVICE_ID'],
+                    initializeForTesting: true
+                });
+                
+                // Create banner ad functions
+                window.showBannerAd = async () => {
+                    try {
+                        await AdMob.showBanner({
+                            adId: 'ca-app-pub-5538218540896625/8498698237',
+                            adSize: 'BANNER',
+                            position: 'BOTTOM_CENTER',
+                            margin: 0,
+                            isTesting: false
+                        });
+                    } catch (error) {
+                        console.error('Banner ad error:', error);
+                    }
+                };
+                
+                window.hideBannerAd = async () => {
+                    try {
+                        await AdMob.hideBanner();
+                    } catch (error) {
+                        console.error('Hide banner error:', error);
+                    }
+                };
+                
+                // Create interstitial ad functions
+                window.prepareInterstitialAd = async () => {
+                    try {
+                        await AdMob.prepareInterstitial({
+                            adId: 'ca-app-pub-5538218540896625/8673958054',
+                            isTesting: false
+                        });
+                    } catch (error) {
+                        console.error('Prepare interstitial error:', error);
+                    }
+                };
+                
+                window.showInterstitialAd = async () => {
+                    try {
+                        await AdMob.showInterstitial();
+                    } catch (error) {
+                        console.error('Show interstitial error:', error);
+                    }
+                };
+                
+                // Auto-prepare interstitial ad
+                setTimeout(() => {
+                    window.prepareInterstitialAd();
+                }, 3000);
+                
+                console.log('AdMob initialized');
+            }
+        }
+        
+        // Handle external links in iframe
+        function handleExternalLinks() {
+            const iframe = document.getElementById('webview-frame');
+            if (iframe) {
+                iframe.onload = function() {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const links = iframeDoc.querySelectorAll('a[href*="whatsapp"], a[href*="wa.me"], a[href*="tel:"], a[href*="mailto:"]');
+                        
+                        links.forEach(link => {
+                            link.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                if (window.openExternalUrl) {
+                                    window.openExternalUrl(this.href);
+                                }
+                            });
+                        });
+                    } catch (error) {
+                        console.log('Cannot access iframe content due to CORS:', error);
+                    }
+                };
             }
         }
         
