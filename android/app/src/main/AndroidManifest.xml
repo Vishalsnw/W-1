@@ -22,19 +22,13 @@
             android:launchMode="singleTask"
             android:name="com.vishal.whatsorder.MainActivity"
             android:theme="@style/AppTheme.NoActionBarLaunch">
-            
+
+            <!-- Launcher intent only -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            
-            <!-- Handle file uploads -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" />
-            </intent-filter>
+
         </activity>
         
         <provider
@@ -44,7 +38,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths" />
         </provider>
         
     </application>
