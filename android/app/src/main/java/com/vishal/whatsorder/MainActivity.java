@@ -1,13 +1,16 @@
+
 package com.vishal.whatsorder;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.community.admob.AdMob;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // BridgeActivity automatically initializes the WebView
-        // No need to manually get bridge
+        
+        // Register AdMob plugin
+        registerPlugin(AdMob.class);
     }
 }

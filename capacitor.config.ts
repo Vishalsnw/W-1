@@ -1,3 +1,4 @@
+
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -6,7 +7,10 @@ const config: CapacitorConfig = {
   webDir: 'www',
   server: {
     androidScheme: 'https',
-    allowNavigation: ['https://whats-order-osr3.vercel.app', 'https://whats-order-osr3.vercel.app/*'],
+    allowNavigation: [
+      'https://whats-order-osr3.vercel.app',
+      'https://whats-order-osr3.vercel.app/*'
+    ],
     cleartext: true,
     allowExternalUrls: true
   },
@@ -17,10 +21,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     Browser: {
-      presentationStyle: 'fullscreen',
-      toolbarColor: '#ffffff',
-      showTitle: true,
-      enableViewportScale: true
+      presentationStyle: 'fullscreen'
     },
     AdMob: {
       appId: 'ca-app-pub-5538218540896625~5131951256',
