@@ -3,16 +3,19 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
-        maven { url = uri("https://jitpack.io") } // ✅ correct syntax for Gradle 8+
+        // JitPack is optional, only needed for plugins not in Maven Central
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS) // ✅ avoid conflicts
+    // Fail if project repositories are used instead of settings
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") } // ✅ correct syntax
+        // JitPack only if you have plugins hosted there
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
@@ -23,7 +26,7 @@ include(":app")
 include(":capacitor-android")
 project(":capacitor-android").projectDir = file("../node_modules/@capacitor/android/capacitor")
 
-// If you add capacitor plugins, include them too
+// Include Capacitor plugins here if needed
 // Example:
 // include(":capacitor-cordova-android-plugins")
 // project(":capacitor-cordova-android-plugins").projectDir = file("../node_modules/@capacitor/android/capacitor-cordova-android-plugins")
