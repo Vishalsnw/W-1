@@ -75,9 +75,6 @@ jobs:
           echo "🔧 Running Capacitor build and sync..."
           npm run build
           
-          echo "🔄 Syncing Capacitor to Android..."
-          npx cap sync android --verbose
-          
           echo "✅ Verifying sync results:"
           ls -la android/app/src/main/assets/
           
