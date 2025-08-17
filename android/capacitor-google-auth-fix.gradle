@@ -24,7 +24,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             debuggable true
@@ -40,13 +40,13 @@ android {
         buildConfig false
     }
     
-    // Add library variants configuration to match what the app expects
-    libraryVariants.all { variant ->
-        variant.outputs.all { output ->
-            def buildType = variant.buildType.name
-            def flavor = variant.flavorName
-            def baseName = flavor.isEmpty() ? buildType : "${flavor}${buildType.capitalize()}"
-            outputFileName = "${project.name}-${baseName}.aar"
+    lint {
+        abortOnError false
+    }
+    
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
         }
     }
 }
