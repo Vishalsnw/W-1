@@ -8,7 +8,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS) // ✅ prevents conflicts
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
@@ -19,6 +19,5 @@ dependencyResolutionManagement {
 rootProject.name = "WhatsOrder"
 include(":app")
 
-// Capacitor Android core
 include(":capacitor-android")
 project(":capacitor-android").projectDir = file("../node_modules/@capacitor/android/capacitor")
