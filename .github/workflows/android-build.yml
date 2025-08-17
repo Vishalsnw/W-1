@@ -61,7 +61,7 @@ jobs:
       - name: Build and sync Capacitor
         run: |
           npm run build
-          npx cap sync android --force
+          npx cap sync android
 
       - name: Verify Android configuration
         run: |
