@@ -42,6 +42,7 @@ dependencies {
     implementation 'androidx.activity:activity:1.8.2'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.multidex:multidex:2.0.1'
 
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
@@ -59,4 +60,7 @@ dependencies {
 
     // AdMob
     implementation 'com.google.android.gms:play-services-ads:22.6.0'
+    
+    // Core WebView
+    implementation 'androidx.webkit:webkit:1.9.0'
 }
