@@ -146,7 +146,7 @@
             iframe.onload = function() {
                 console.log('Iframe loaded successfully');
                 clearTimeout(loadTimeout);
-                
+
                 // Force light theme in iframe
                 try {
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -393,7 +393,7 @@
                 }
             } else {
                 console.log('Not in native environment, skipping AdMob');
-                
+
                 // Create dummy functions for web testing
                 window.showBannerAd = () => console.log('Banner ad (web)');
                 window.hideBannerAd = () => console.log('Hide banner (web)');
@@ -413,9 +413,14 @@
                 }
 
                 if (event.data.type === 'OPEN_EXTERNAL_URL') {
-                    openExternalUrl(event.data.url);
+                    const url = event.data.url;
+                    if (url && window.Capacitor && window.Capacitor.isNativePlatform()) {
+                        // Use Capacitor's Browser plugin or native method
+                        window.open(url, '_blank');
+                    }
                 } else if (event.data.type === 'SHOW_INTERSTITIAL_AD') {
-                    showInterstitialAd();
+                    // Trigger interstitial ad from web content
+                    window.showInterstitialAd();
                 }
             });
 
