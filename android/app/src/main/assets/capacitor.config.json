@@ -1,0 +1,8 @@
+{
+	"appId": "com.vishal.whatsorder",
+	"appName": "WhatsOrder",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "https"
+	}
+}
