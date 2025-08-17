@@ -6,11 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'www',
   server: {
     androidScheme: 'https',
-    allowNavigation: ['https://whats-order-osr3.vercel.app']
+    allowNavigation: ['https://whats-order-osr3.vercel.app', 'https://whats-order-osr3.vercel.app/*'],
+    cleartext: true
   },
   android: {
     allowMixedContent: true,
-    captureInput: true
+    captureInput: true,
+    webContentsDebuggingEnabled: true
   }
 };
 
