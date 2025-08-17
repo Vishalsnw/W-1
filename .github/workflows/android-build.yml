@@ -113,7 +113,7 @@ jobs:
           cd android
           ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.log
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
-          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+          if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED - Last 50 lines of build output:"
             echo "================================================"
             tail -50 build-output.log
@@ -138,7 +138,7 @@ jobs:
           if [ -f app/whatsorder-release-key.keystore ]; then
             ./gradlew assembleRelease --stacktrace 2>&1 | tee release-build-output.log
             RELEASE_EXIT_CODE=${PIPESTATUS[0]}
-            if [ $RELEASE_EXIT_CODE -ne 0 ]; then
+            if [ "$RELEASE_EXIT_CODE" -ne 0 ]; then
               echo "❌ RELEASE BUILD FAILED - Last 30 lines:"
               tail -30 release-build-output.log
               grep -i "error\|failed\|exception" release-build-output.log | tail -5 || echo "No specific error patterns found"

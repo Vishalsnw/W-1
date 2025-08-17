@@ -52,6 +52,12 @@ dependencies {
 
     // Capacitor Android local module
     implementation project(":capacitor-android")
+    
+    // Capacitor plugins
+    implementation project(':capacitor-community-admob')
+    implementation project(':capacitor-camera')
+    implementation project(':capacitor-filesystem')
+    implementation project(':codetrix-studio-capacitor-google-auth')
 
     // Testing
     testImplementation 'junit:junit:4.13.2'
