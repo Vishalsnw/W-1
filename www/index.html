@@ -128,7 +128,7 @@
             loadTimeout = setTimeout(() => {
                 console.log('Load timeout reached');
                 showError();
-            }, 15000);
+            }, 10000);
 
             // Initialize the iframe and native functions
             initializeApp();
@@ -137,12 +137,16 @@
         function initializeApp() {
             const iframe = document.getElementById('webview-frame');
 
+            // Initialize native functions immediately
+            initializeNativeFunctions();
+            initializeAdMob();
+            setupExternalLinkHandling();
+
             // Handle successful load
             iframe.onload = function() {
                 console.log('Iframe loaded successfully');
                 clearTimeout(loadTimeout);
-                showSuccess();
-
+                
                 // Force light theme in iframe
                 try {
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -166,10 +170,7 @@
                     console.log('Could not inject theme styles:', e);
                 }
 
-                // Initialize native functions after iframe loads
-                initializeNativeFunctions();
-                initializeAdMob();
-                setupExternalLinkHandling();
+                showSuccess();
             };
 
             // Handle load error
@@ -179,12 +180,12 @@
                 showError();
             };
 
-            // Show the iframe after a minimum loading time
+            // Fallback - show iframe after minimum loading time even if onload doesn't fire
             setTimeout(() => {
-                if (iframe.contentDocument || iframe.contentWindow) {
-                    showSuccess();
-                }
-            }, 3000);
+                console.log('Fallback timer - showing iframe');
+                clearTimeout(loadTimeout);
+                showSuccess();
+            }, 5000);
         }
 
         function showSuccess() {
@@ -319,6 +320,54 @@
                 const AdMob = window.Capacitor.Plugins.AdMob;
 
                 if (AdMob) {
+                    // Create ad functions first
+                    window.showBannerAd = async () => {
+                        try {
+                            await AdMob.showBanner({
+                                adId: 'ca-app-pub-5538218540896625/8498698237',
+                                adSize: 'BANNER',
+                                position: 'BOTTOM_CENTER',
+                                margin: 0,
+                                isTesting: false
+                            });
+                            console.log('Banner ad shown');
+                        } catch (error) {
+                            console.error('Banner ad error:', error);
+                        }
+                    };
+
+                    window.hideBannerAd = async () => {
+                        try {
+                            await AdMob.hideBanner();
+                            console.log('Banner ad hidden');
+                        } catch (error) {
+                            console.error('Hide banner error:', error);
+                        }
+                    };
+
+                    window.prepareInterstitialAd = async () => {
+                        try {
+                            await AdMob.prepareInterstitial({
+                                adId: 'ca-app-pub-5538218540896625/8673958054',
+                                isTesting: false
+                            });
+                            console.log('Interstitial ad prepared');
+                        } catch (error) {
+                            console.error('Prepare interstitial error:', error);
+                        }
+                    };
+
+                    window.showInterstitialAd = async () => {
+                        try {
+                            await AdMob.showInterstitial();
+                            console.log('Interstitial ad shown');
+                            // Prepare the next interstitial ad
+                            setTimeout(() => window.prepareInterstitialAd(), 1000);
+                        } catch (error) {
+                            console.error('Show interstitial error:', error);
+                        }
+                    };
+
                     // Initialize AdMob
                     AdMob.initialize({
                         requestTrackingAuthorization: true,
@@ -329,9 +378,7 @@
 
                         // Show banner ad after initialization
                         setTimeout(() => {
-                            if (window.showBannerAd) {
-                                showBannerAd();
-                            }
+                            window.showBannerAd();
                         }, 3000);
 
                         // Prepare interstitial ad
@@ -346,60 +393,12 @@
                 }
             } else {
                 console.log('Not in native environment, skipping AdMob');
-            }
-
-                // Create banner ad functions
-                window.showBannerAd = async () => {
-                    try {
-                        await AdMob.showBanner({
-                            adId: 'ca-app-pub-5538218540896625/8498698237',
-                            adSize: 'BANNER',
-                            position: 'BOTTOM_CENTER',
-                            margin: 0,
-                            isTesting: false
-                        });
-                        console.log('Banner ad shown');
-                    } catch (error) {
-                        console.error('Banner ad error:', error);
-                    }
-                };
-
-                window.hideBannerAd = async () => {
-                    try {
-                        await AdMob.hideBanner();
-                        console.log('Banner ad hidden');
-                    } catch (error) {
-                        console.error('Hide banner error:', error);
-                    }
-                };
-
-                // Create interstitial ad functions
-                window.prepareInterstitialAd = async () => {
-                    try {
-                        await AdMob.prepareInterstitial({
-                            adId: 'ca-app-pub-5538218540896625/8673958054',
-                            isTesting: false
-                        });
-                        console.log('Interstitial ad prepared');
-                    } catch (error) {
-                        console.error('Prepare interstitial error:', error);
-                    }
-                };
-
-                window.showInterstitialAd = async () => {
-                    try {
-                        await AdMob.showInterstitial();
-                        console.log('Interstitial ad shown');
-                        // Prepare the next interstitial ad
-                        setTimeout(prepareInterstitialAd, 1000);
-                    } catch (error) {
-                        console.error('Show interstitial error:', error);
-                    }
-                };
-
-                console.log('AdMob functions created');
-            } else {
-                console.log('AdMob plugin not available');
+                
+                // Create dummy functions for web testing
+                window.showBannerAd = () => console.log('Banner ad (web)');
+                window.hideBannerAd = () => console.log('Hide banner (web)');
+                window.prepareInterstitialAd = () => console.log('Prepare interstitial (web)');
+                window.showInterstitialAd = () => console.log('Show interstitial (web)');
             }
         }
 
