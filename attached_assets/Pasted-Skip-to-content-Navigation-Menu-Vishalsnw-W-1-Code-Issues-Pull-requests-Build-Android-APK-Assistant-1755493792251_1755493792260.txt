@@ -1,0 +1,63 @@
+Skip to content
+Navigation Menu
+Vishalsnw
+W-1
+
+Code
+Issues
+Pull requests
+Build Android APK
+Assistant checkpoint: Remove kotlinOptions from AdMob fix #133
+Annotations
+1 error and 1 warning
+build
+failed 1 minute ago in 2m 4s
+2s
+0s
+3s
+0s
+19s
+11s
+8s
+0s
+3s
+2s
+0s
+31s
+11s
+5s
+25s
+0s
+0s
+0s
+0s
+Run cd android
+🔍 BUILD ERROR SUMMARY
+======================
+📋 Key Error Messages:
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:checkDebugAarMetadata FAILED
+> Task :capacitor-community-admob:compileDebugJavaWithJavac FAILED
+1: Task failed with an exception.
+Execution failed for task ':app:checkDebugAarMetadata'.
+> Could not resolve all dependencies for configuration ':app:debugRuntimeClasspath'.
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:checkDebugAarMetadata'.
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:38)
+Caused by: org.gradle.api.internal.artifacts.configurations.ResolveExceptionWithHints: Could not resolve all dependencies for configuration ':app:debugRuntimeClasspath'.
+
+📋 Last 20 lines of build output:
+/home/runner/work/_temp/00f7a8bc-bb0b-40ba-941e-cbda0172c572.sh: line 15: [: too many arguments
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:337)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:324)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:317)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+1s
+0s
+0s
+0s
+0s
+0s
