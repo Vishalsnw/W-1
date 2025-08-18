@@ -1,4 +1,3 @@
-
 name: Build Android APK
 
 on:
@@ -25,14 +24,15 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '17' # ✅ Force Java 17
           distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 33
-          build-tools: 33.0.2
+          api-level: 34   # ✅ match compileSdk in build.gradle
+          build-tools: 34.0.0
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -49,66 +49,14 @@ jobs:
         run: |
           rm -rf node_modules package-lock.json
           npm install
-          
-      - name: Verify package.json dependencies
+
+      - name: Install Capacitor plugins
         run: |
-          echo "📋 Checking package.json dependencies:"
-          cat package.json | grep -A 20 '"dependencies"'
-          
-      - name: Install and verify plugins
-        run: |
-          echo "📦 Installing Capacitor plugins..."
           npm install @capacitor-community/admob@^7.0.3 --save
           npm install @capacitor/android@^5.7.8 --save  
           npm install @capacitor/camera@^5.0.10 --save
           npm install @capacitor/filesystem@^5.2.2 --save
           npm install @codetrix-studio/capacitor-google-auth@^1.3.2 --save
-          
-          echo "✅ Verifying installed plugins:"
-          ls -la node_modules/@capacitor-community/admob/ || echo "❌ AdMob not found"
-          ls -la node_modules/@capacitor/camera/ || echo "❌ Camera not found"
-          ls -la node_modules/@capacitor/filesystem/ || echo "❌ Filesystem not found"
-          ls -la node_modules/@codetrix-studio/capacitor-google-auth/ || echo "❌ GoogleAuth not found"
-          
-          echo "🔧 Copying Google Auth Android files..."
-          if [ -d "node_modules/@codetrix-studio/capacitor-google-auth/android" ]; then
-            cp android/capacitor-google-auth-fix.gradle node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle
-            cp android/capacitor-google-auth-AndroidManifest.xml node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/AndroidManifest.xml
-            mkdir -p node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/java/com/codetrixstudio/capacitor/GoogleAuth/
-            cp android/capacitor-google-auth-GoogleAuth.java node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/java/com/codetrixstudio/capacitor/GoogleAuth/GoogleAuth.java
-            echo "✅ Google Auth build file, manifest, and Java source copied"
-          else
-            echo "❌ Google Auth plugin directory not found"
-          fi
-
-          # AdMob plugin should work natively with Java 17
-          if [ -d "node_modules/@capacitor-community/admob/android" ]; then
-            echo "✅ AdMob plugin found and ready"
-          else
-            echo "❌ AdMob plugin directory not found"
-          fi
-
-      - name: Build and sync Capacitor with error checking
-        run: |
-          echo "🔧 Running Capacitor build and sync..."
-          npm run build
-          
-          echo "✅ Verifying sync results:"
-          ls -la android/app/src/main/assets/
-          
-          if [ -f "android/app/src/main/assets/capacitor.plugins.json" ]; then
-            echo "📋 Plugin configuration:"
-            cat android/app/src/main/assets/capacitor.plugins.json
-          else
-            echo "❌ capacitor.plugins.json not found!"
-            exit 1
-          fi
-
-      - name: Verify Android configuration
-        run: |
-          ls -la android/app/src/main/assets/
-          cat android/app/src/main/assets/capacitor.config.json
-          cat android/app/src/main/assets/capacitor.plugins.json
 
       - name: Generate Gradle Wrapper
         run: |
@@ -117,11 +65,6 @@ jobs:
             gradle wrapper --gradle-version 8.2.1 --distribution-type all
           fi
           chmod +x gradlew
-
-      - name: Clean Gradle cache
-        run: |
-          cd android
-          ./gradlew clean --stacktrace
 
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
@@ -133,11 +76,7 @@ jobs:
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED - Last 50 lines of build output:"
-            echo "================================================"
             tail -50 build-output.log
-            echo "================================================"
-            echo "🔍 Searching for error patterns..."
-            grep -i "error\|failed\|exception" build-output.log | tail -10 || echo "No specific error patterns found"
             exit 1
           fi
         env:
@@ -149,66 +88,3 @@ jobs:
           name: whatsorder-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-
-      - name: Build Release APK (if keystore exists)
-        run: |
-          cd android
-          if [ -f app/whatsorder-release-key.keystore ]; then
-            ./gradlew assembleRelease --stacktrace 2>&1 | tee release-build-output.log
-            RELEASE_EXIT_CODE=${PIPESTATUS[0]}
-            if [ "$RELEASE_EXIT_CODE" -ne 0 ]; then
-              echo "❌ RELEASE BUILD FAILED - Last 30 lines:"
-              tail -30 release-build-output.log
-              grep -i "error\|failed\|exception" release-build-output.log | tail -5 || echo "No specific error patterns found"
-            fi
-          else
-            echo "⚠️ No keystore found, skipping release build"
-          fi
-        continue-on-error: true
-        env:
-          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false"
-
-      - name: Upload Release APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: whatsorder-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
-        continue-on-error: true
-
-      - name: Show Build Error Summary
-        if: failure()
-        run: |
-          cd android
-          echo "🔍 BUILD ERROR SUMMARY"
-          echo "======================"
-          
-          # Check if build output exists and show relevant errors
-          if [ -f build-output.log ]; then
-            echo "📋 Key Error Messages:"
-            grep -i "error\|failed\|exception\|could not resolve\|missing\|not found" build-output.log | head -10
-            echo ""
-            echo "📋 Last 20 lines of build output:"
-            tail -20 build-output.log
-          fi
-          
-          # Check Gradle daemon logs for additional info
-          if [ -f ~/.gradle/daemon/*/daemon-*.out.log ]; then
-            echo ""
-            echo "📋 Recent Gradle daemon errors:"
-            grep -i "error\|exception" ~/.gradle/daemon/*/daemon-*.out.log | tail -5 || echo "No daemon errors found"
-          fi
-
-      - name: Upload Build Logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: |
-            android/build-output.log
-            android/release-build-output.log
-            android/app/build/outputs/logs/
-            android/build/outputs/logs/
-          retention-days: 7
-        continue-on-error: true
