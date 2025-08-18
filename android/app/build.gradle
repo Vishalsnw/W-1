@@ -21,7 +21,11 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
         }
     }
 
@@ -32,6 +36,17 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    packagingOptions {
+        resources {
+            excludes += [
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE.txt",
+                "META-INF/LICENSE",
+                "META-INF/NOTICE"
+            ]
+        }
     }
 }
 
@@ -50,10 +65,10 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
 
-    // Capacitor Android local module
+    // Capacitor core module
     implementation project(":capacitor-android")
     
-    // Capacitor plugins
+    // Capacitor community / plugins
     implementation project(':capacitor-community-admob')
     implementation project(':capacitor-camera')
     implementation project(':capacitor-filesystem')
