@@ -81,10 +81,9 @@ jobs:
             echo "❌ Google Auth plugin directory not found"
           fi
 
-          # Fix AdMob plugin Java compatibility
+          # AdMob plugin should work natively with Java 17
           if [ -d "node_modules/@capacitor-community/admob/android" ]; then
-            cp android/capacitor-community-admob-fix.gradle node_modules/@capacitor-community/admob/android/build.gradle
-            echo "✅ AdMob plugin Java compatibility fixed"
+            echo "✅ AdMob plugin found and ready"
           else
             echo "❌ AdMob plugin directory not found"
           fi
