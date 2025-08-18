@@ -13,8 +13,25 @@ subprojects {
         mavenCentral()
         gradlePluginPortal()
     }
-    tasks.withType(org.gradle.api.tasks.Delete).configureEach {
-        delete(rootProject.buildDir)
+}
+
+// ✅ Force Java 17 for capacitor-community-admob
+subprojects { sub ->
+    if (sub.name == "capacitor-community-admob") {
+        afterEvaluate {
+            // Java sources
+            tasks.withType(JavaCompile).configureEach {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+                options.release = 17
+            }
+            // Kotlin sources
+            tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                kotlinOptions {
+                    jvmTarget = "17"
+                }
+            }
+        }
     }
 }
 
