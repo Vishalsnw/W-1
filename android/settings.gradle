@@ -17,7 +17,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "WhatsOrder"
+
 include ':app'
+
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
@@ -33,3 +35,6 @@ project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacit
 include ':codetrix-studio-capacitor-google-auth'
 project(':codetrix-studio-capacitor-google-auth').projectDir = new File('../node_modules/@codetrix-studio/capacitor-google-auth/android')
 project(':codetrix-studio-capacitor-google-auth').buildFileName = 'build.gradle'
+
+include ':capacitor-community-admob'
+project(':capacitor-community-admob').projectDir = new File('../node_modules/@capacitor-community/admob/android')
