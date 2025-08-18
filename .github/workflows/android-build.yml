@@ -81,6 +81,14 @@ jobs:
             echo "❌ Google Auth plugin directory not found"
           fi
 
+          # Fix AdMob plugin Java compatibility
+          if [ -d "node_modules/@capacitor-community/admob/android" ]; then
+            cp android/capacitor-community-admob-fix.gradle node_modules/@capacitor-community/admob/android/build.gradle
+            echo "✅ AdMob plugin Java compatibility fixed"
+          else
+            echo "❌ AdMob plugin directory not found"
+          fi
+
       - name: Build and sync Capacitor with error checking
         run: |
           echo "🔧 Running Capacitor build and sync..."
