@@ -32,4 +32,4 @@ project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacit
 
 include ':codetrix-studio-capacitor-google-auth'
 project(':codetrix-studio-capacitor-google-auth').projectDir = new File('../node_modules/@codetrix-studio/capacitor-google-auth/android')
-project(':codetrix-studio-capacitor-google-auth').buildFileName = '../../../capacitor-google-auth-fix.gradle'
+project(':codetrix-studio-capacitor-google-auth').buildFileName = 'build.gradle'
