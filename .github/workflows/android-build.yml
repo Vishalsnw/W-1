@@ -74,7 +74,9 @@ jobs:
           if [ -d "node_modules/@codetrix-studio/capacitor-google-auth/android" ]; then
             cp android/capacitor-google-auth-fix.gradle node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle
             cp android/capacitor-google-auth-AndroidManifest.xml node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/AndroidManifest.xml
-            echo "✅ Google Auth build file and manifest copied"
+            mkdir -p node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/java/com/codetrixstudio/capacitor/GoogleAuth/
+            cp android/capacitor-google-auth-GoogleAuth.java node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/java/com/codetrixstudio/capacitor/GoogleAuth/GoogleAuth.java
+            echo "✅ Google Auth build file, manifest, and Java source copied"
           else
             echo "❌ Google Auth plugin directory not found"
           fi
