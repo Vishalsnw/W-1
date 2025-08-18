@@ -35,4 +35,4 @@ project(':codetrix-studio-capacitor-google-auth').projectDir = new File('../node
 project(':codetrix-studio-capacitor-google-auth').buildFileName = 'build.gradle'
 
 include ':capacitor-community-admob'
-project(':capacitor-community-admob').projectDir = new File('./')
+project(':capacitor-community-admob').projectDir = new File('capacitor-community-admob/')
