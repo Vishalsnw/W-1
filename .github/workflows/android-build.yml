@@ -70,10 +70,11 @@ jobs:
           ls -la node_modules/@capacitor/filesystem/ || echo "❌ Filesystem not found"
           ls -la node_modules/@codetrix-studio/capacitor-google-auth/ || echo "❌ GoogleAuth not found"
           
-          echo "🔧 Copying Google Auth Android build file..."
+          echo "🔧 Copying Google Auth Android files..."
           if [ -d "node_modules/@codetrix-studio/capacitor-google-auth/android" ]; then
             cp android/capacitor-google-auth-fix.gradle node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle
-            echo "✅ Google Auth build file copied"
+            cp android/capacitor-google-auth-AndroidManifest.xml node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/AndroidManifest.xml
+            echo "✅ Google Auth build file and manifest copied"
           else
             echo "❌ Google Auth plugin directory not found"
           fi
