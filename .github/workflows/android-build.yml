@@ -58,17 +58,32 @@ jobs:
           npm install @capacitor/filesystem@^5.2.2 --save
           npm install @codetrix-studio/capacitor-google-auth@^1.3.2 --save
 
-      - name: Patch Google Auth Gradle (remove jcenter)
+      - name: Patch Capacitor Plugins (remove jcenter + add namespace)
         run: |
-          echo "🔧 Patching @codetrix-studio/capacitor-google-auth build.gradle..."
-          FILE="node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
-          if [ -f "$FILE" ]; then
-            sed -i 's/jcenter()/mavenCentral()\ngoogle()/' "$FILE"
-            echo "✅ Patched build.gradle (jcenter -> mavenCentral + google)"
-            head -20 "$FILE"
-          else
-            echo "❌ $FILE not found"
-          fi
+          echo "🔧 Patching Capacitor plugins build.gradle..."
+          PLUGINS=(
+            "node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
+            "node_modules/@capacitor-community/admob/android/build.gradle"
+            "node_modules/@capacitor/camera/android/build.gradle"
+            "node_modules/@capacitor/filesystem/android/build.gradle"
+            "node_modules/@capacitor/android/capacitor/build.gradle"
+          )
+
+          for FILE in "${PLUGINS[@]}"; do
+            if [ -f "$FILE" ]; then
+              echo "👉 Patching $FILE"
+              # replace jcenter()
+              sed -i 's/jcenter()/mavenCentral()\ngoogle()/' "$FILE"
+              # add namespace if missing
+              if grep -q "android {" "$FILE" && ! grep -q "namespace" "$FILE"; then
+                PACKAGE_NAME=$(basename $(dirname $FILE))
+                sed -i "/android {/a \    namespace \"com.capacitor.$PACKAGE_NAME\"" "$FILE"
+              fi
+            else
+              echo "⚠️ Skipping, not found: $FILE"
+            fi
+          done
+          echo "✅ All plugins patched."
 
       - name: Generate Gradle Wrapper
         run: |
