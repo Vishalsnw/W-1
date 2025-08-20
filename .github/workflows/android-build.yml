@@ -24,14 +24,14 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17' # ✅ Force Java 17
+          java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 34   # ✅ match compileSdk in build.gradle
+          api-level: 34
           build-tools: 34.0.0
 
       - name: Cache Gradle
@@ -72,9 +72,7 @@ jobs:
           for FILE in "${PLUGINS[@]}"; do
             if [ -f "$FILE" ]; then
               echo "👉 Patching $FILE"
-              # replace jcenter()
               sed -i 's/jcenter()/mavenCentral()\ngoogle()/' "$FILE"
-              # add namespace if missing
               if grep -q "android {" "$FILE" && ! grep -q "namespace" "$FILE"; then
                 PLUGIN_NAME=$(basename $(dirname $(dirname $FILE)))
                 case $PLUGIN_NAME in
@@ -89,36 +87,17 @@ jobs:
                     ;;
                 esac
               fi
-            else
-              echo "⚠️ Skipping, not found: $FILE"
             fi
           done
 
-          echo "🔧 Patching AndroidManifest.xml files..."
-          # Fix all plugin AndroidManifest.xml files
+          echo "🔧 Cleaning AndroidManifest.xml files..."
           find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" | while read manifest; do
-            echo "👉 Cleaning package attribute from $manifest"
             sed -i 's/package="[^"]*"//g' "$manifest"
             sed -i 's/package=""//g' "$manifest"
-            # Clean up manifest opening tag
             sed -i 's/<manifest[^>]*package="[^"]*"[^>]*>/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/g' "$manifest"
-            # Show what we changed
-            echo "   Modified: $manifest"
-            head -5 "$manifest"
           done
 
-          # Create missing debug source directories for Capacitor plugins
-          echo "👉 Creating missing debug source directories..."
-          find node_modules -type d -path "*/android/src/main/java" | while read main_java_dir; do
-            debug_java_dir="${main_java_dir/main/debug}"
-            if [ ! -d "$debug_java_dir" ]; then
-              echo "Creating $debug_java_dir"
-              mkdir -p "$debug_java_dir"
-              echo "// Debug source directory placeholder" > "$debug_java_dir/.gitkeep"
-            fi
-          done
-
-          echo "✅ All plugins patched."
+          echo "✅ Plugins patched."
 
       - name: Generate Gradle Wrapper
         run: |
@@ -131,134 +110,40 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
-      - name: Validate AndroidManifest files
-        run: |
-          cd android
-          chmod +x check-manifests.sh
-          ./check-manifests.sh
-
-      - name: Pre-build Validation
-        run: |
-          cd android
-          echo "🔍 Pre-build validation checks..."
-          
-          # Check if all required directories exist
-          echo "📁 Checking required directories:"
-          for plugin in "capacitor-camera" "capacitor-filesystem" "capacitor-community-admob" "codetrix-studio-capacitor-google-auth"; do
-            if [ -d "../node_modules/@${plugin//-/\/}/android/src/main/java" ]; then
-              echo "  ✅ $plugin main java directory exists"
-            else
-              echo "  ⚠️  $plugin main java directory not found"
-            fi
-            
-            if [ -d "../node_modules/@${plugin//-/\/}/android/src/debug/java" ]; then
-              echo "  ✅ $plugin debug java directory exists"
-            else
-              echo "  ⚠️  $plugin debug java directory not found"
-            fi
-          done
-          
-          # Check gradle files
-          echo "📝 Checking gradle files:"
-          if [ -f "build.gradle" ]; then
-            echo "  ✅ Main build.gradle exists"
-          else
-            echo "  ❌ Main build.gradle missing"
-          fi
-          
-          if [ -f "app/build.gradle" ]; then
-            echo "  ✅ App build.gradle exists"
-          else
-            echo "  ❌ App build.gradle missing"
-          fi
-          
-          # Check for common issues
-          echo "🔧 Checking for common configuration issues:"
-          if grep -q "jcenter" build.gradle app/build.gradle 2>/dev/null; then
-            echo "  ⚠️  Found jcenter() references (should use mavenCentral)"
-          else
-            echo "  ✅ No jcenter() references found"
-          fi
-
       - name: Build Debug APK
         run: |
           cd android
-          echo "🔧 Debug: Checking project structure before build..."
-          find . -name "AndroidManifest.xml" -exec echo "Found manifest: {}" \; -exec head -3 {} \;
-
           echo "🔧 Running Gradle build..."
           ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-output.log
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
-            echo "❌ BUILD FAILED with exit code: $BUILD_EXIT_CODE"
+            echo "❌ BUILD FAILED"
             echo ""
-            
-            # === EXACT ERROR EXTRACTION ===
             echo "========================================="
-            echo "🔍 EXACT BUILD ERROR DETAILS"
+            echo "📌 ERROR SUMMARY"
             echo "========================================="
-            
-            # Extract specific error message
-            EXACT_ERROR=$(grep -E "FAILURE:|BUILD FAILED|Error:|Exception:" build-output.log | head -10)
-            if [ ! -z "$EXACT_ERROR" ]; then
-              echo "📍 Primary Error Messages:"
-              echo "$EXACT_ERROR"
-              echo ""
-            fi
-            
-            # Extract failed tasks
-            FAILED_TASKS=$(grep -E "> Task.*FAILED|Execution failed for task" build-output.log | head -10)
-            if [ ! -z "$FAILED_TASKS" ]; then
-              echo "🔧 Failed Tasks:"
-              echo "$FAILED_TASKS"
-              echo ""
-            fi
-            
-            # Extract compilation errors
-            COMPILE_ERRORS=$(grep -E "Compilation failed|compilation.*error|cannot find symbol" build-output.log | head -10)
-            if [ ! -z "$COMPILE_ERRORS" ]; then
-              echo "🔨 Compilation Errors:"
-              echo "$COMPILE_ERRORS"
-              echo ""
-            fi
-            
-            # Extract manifest errors
-            MANIFEST_ERRORS=$(grep -E "AndroidManifest\.xml|manifest.*error|manifest.*merge.*failed" build-output.log | head -10)
-            if [ ! -z "$MANIFEST_ERRORS" ]; then
-              echo "📋 Manifest Processing Errors:"
-              echo "$MANIFEST_ERRORS"
-              echo ""
-            fi
-            
-            echo "========================================="
-            echo "📋 DETAILED ERROR BREAKDOWN"
-            echo "========================================="
-            
-            # === MANIFEST ERRORS ===
-            echo "🔍 1. MANIFEST PROCESSING ERRORS:"
-            grep -i -A3 -B3 "processDebugManifest\|manifest.*error\|package.*error" build-output.log | head -20
+
+            echo "🔍 Manifest Errors:"
+            grep -i -E "AndroidManifest\.xml|manifest.*error|namespace.*error" build-output.log | uniq || true
             echo ""
-            
-            # === DEPENDENCY ERRORS ===
-            echo "🔍 2. DEPENDENCY/CLASSPATH ERRORS:"
-            grep -i -A3 -B3 "dependency.*failed\|could not resolve\|not found.*java\|classpath.*error" build-output.log | head -20
+
+            echo "🔨 Compilation Errors:"
+            grep -i -E "Compilation failed|cannot find symbol|error:" build-output.log | uniq || true
             echo ""
-            
-            # === GRADLE TASK ERRORS ===
-            echo "🔍 3. GRADLE TASK FAILURES:"
-            grep -i -A5 -B2 "task.*failed\|execution failed" build-output.log | head -30
+
+            echo "📦 Dependency Errors:"
+            grep -i -E "could not resolve|dependency.*failed|not found" build-output.log | uniq || true
             echo ""
-            
-            # === BUILD CONFIGURATION ERRORS ===
-            echo "🔍 4. BUILD CONFIGURATION ERRORS:"
-            grep -i -A3 -B3 "build.*failed\|configuration.*failed\|namespace.*error" build-output.log | head -15
+
+            echo "⚙️ Gradle Task Failures:"
+            grep -i -E "> Task.*FAILED|Execution failed for task" build-output.log | uniq || true
             echo ""
-            
+
             echo "========================================="
-            echo "📄 COMPLETE ERROR LOG (Last 100 lines)"
+            echo "📄 LAST 100 LINES OF LOG"
             echo "========================================="
             tail -100 build-output.log
-            
+
             exit 1
           fi
         env:
