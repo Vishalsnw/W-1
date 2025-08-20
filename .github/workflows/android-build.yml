@@ -93,12 +93,11 @@ jobs:
               echo "⚠️ Skipping, not found: $FILE"
             fi
           done
-          
+
           echo "🔧 Patching AndroidManifest.xml files..."
           # Fix all plugin AndroidManifest.xml files
           find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" | while read manifest; do
             echo "👉 Cleaning package attribute from $manifest"
-            # Remove package attribute completely
             sed -i 's/package="[^"]*"//g' "$manifest"
             sed -i 's/package=""//g' "$manifest"
             # Clean up manifest opening tag
@@ -107,10 +106,18 @@ jobs:
             echo "   Modified: $manifest"
             head -5 "$manifest"
           done
-          
-          echo "🔧 Debug: Checking for any remaining package attributes..."
-          find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" -exec grep -l "package=" {} \; || echo "✅ No package attributes found"
-          
+
+          # Create missing debug source directories for Capacitor plugins
+          echo "👉 Creating missing debug source directories..."
+          find node_modules -type d -path "*/android/src/main/java" | while read main_java_dir; do
+            debug_java_dir="${main_java_dir/main/debug}"
+            if [ ! -d "$debug_java_dir" ]; then
+              echo "Creating $debug_java_dir"
+              mkdir -p "$debug_java_dir"
+              echo "// Debug source directory placeholder" > "$debug_java_dir/.gitkeep"
+            fi
+          done
+
           echo "✅ All plugins patched."
 
       - name: Generate Gradle Wrapper
@@ -135,7 +142,7 @@ jobs:
           cd android
           echo "🔧 Debug: Checking project structure before build..."
           find . -name "AndroidManifest.xml" -exec echo "Found manifest: {}" \; -exec head -3 {} \;
-          
+
           echo "🔧 Running Gradle build..."
           ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-output.log
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
