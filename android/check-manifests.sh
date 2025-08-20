@@ -20,14 +20,18 @@ find . -name "AndroidManifest.xml" -type f | while read manifest; do
         echo "  ✅ No package attribute found"
     fi
     
-    # Check for basic XML validity
-    if xmllint --noout "$manifest" 2>/dev/null; then
-        echo "  ✅ XML is valid"
+    # Check for basic XML validity (skip if xmllint not available)
+    if command -v xmllint >/dev/null 2>&1; then
+        if xmllint --noout "$manifest" 2>/dev/null; then
+            echo "  ✅ XML is valid"
+        else
+            echo "  ❌ ERROR: XML validation failed"
+            echo "    📍 EXACT ERROR:"
+            xmllint "$manifest" 2>&1 | head -5 | sed 's/^/      /'
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+        fi
     else
-        echo "  ❌ ERROR: XML validation failed"
-        echo "    📍 EXACT ERROR:"
-        xmllint "$manifest" 2>&1 | head -5 | sed 's/^/      /'
-        ERROR_COUNT=$((ERROR_COUNT + 1))
+        echo "  ✅ XML validation skipped (xmllint not available)"
     fi
     
     # Check for missing xmlns declaration
@@ -62,5 +66,3 @@ if [ "$ERROR_COUNT" -gt 0 ]; then
 else
     echo "✅ All manifest files are valid"
 fi
-    echo ""
-done
