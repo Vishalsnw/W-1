@@ -4,8 +4,6 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
-apply from: '../capacitor-google-auth-fix.gradle'
-
 android {
     namespace "com.vishal.whatsorder"
     compileSdk 34

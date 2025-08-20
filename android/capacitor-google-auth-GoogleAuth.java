@@ -61,18 +61,14 @@ public class GoogleAuth extends Plugin {
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-            
             JSObject ret = new JSObject();
+            ret.put("success", true);
             JSObject user = new JSObject();
             user.put("id", account.getId());
             user.put("name", account.getDisplayName());
             user.put("email", account.getEmail());
-            user.put("imageUrl", account.getPhotoUrl() != null ? account.getPhotoUrl().toString() : "");
-            
             ret.put("user", user);
-            ret.put("success", true);
             
-            // Return to the saved call
             PluginCall savedCall = getSavedCall();
             if (savedCall != null) {
                 savedCall.resolve(ret);
