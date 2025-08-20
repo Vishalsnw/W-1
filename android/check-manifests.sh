@@ -1,6 +1,10 @@
 
 #!/bin/bash
 echo "🔍 Checking all AndroidManifest.xml files for issues..."
+echo "========================================="
+
+ERROR_COUNT=0
+WARNING_COUNT=0
 
 # Find all manifest files
 find . -name "AndroidManifest.xml" -type f | while read manifest; do
@@ -8,7 +12,10 @@ find . -name "AndroidManifest.xml" -type f | while read manifest; do
     
     # Check for package attribute (should not exist in AGP 8+)
     if grep -q "package=" "$manifest"; then
-        echo "  ❌ Found package attribute: $(grep "package=" "$manifest")"
+        echo "  ❌ ERROR: Found package attribute: $(grep "package=" "$manifest")"
+        echo "    📍 EXACT LINE: $(grep -n "package=" "$manifest")"
+        echo "    🔧 FIX: Remove package attribute from manifest tag"
+        ERROR_COUNT=$((ERROR_COUNT + 1))
     else
         echo "  ✅ No package attribute found"
     fi
@@ -17,11 +24,43 @@ find . -name "AndroidManifest.xml" -type f | while read manifest; do
     if xmllint --noout "$manifest" 2>/dev/null; then
         echo "  ✅ XML is valid"
     else
-        echo "  ❌ XML validation failed"
-        xmllint "$manifest" 2>&1 | head -5
+        echo "  ❌ ERROR: XML validation failed"
+        echo "    📍 EXACT ERROR:"
+        xmllint "$manifest" 2>&1 | head -5 | sed 's/^/      /'
+        ERROR_COUNT=$((ERROR_COUNT + 1))
+    fi
+    
+    # Check for missing xmlns declaration
+    if ! grep -q "xmlns:android" "$manifest"; then
+        echo "  ⚠️  WARNING: Missing xmlns:android declaration"
+        WARNING_COUNT=$((WARNING_COUNT + 1))
+    else
+        echo "  ✅ xmlns:android declaration found"
+    fi
+    
+    # Check for empty manifest tags
+    if grep -q "<manifest[^>]*></manifest>" "$manifest"; then
+        echo "  ⚠️  WARNING: Empty manifest tag found"
+        WARNING_COUNT=$((WARNING_COUNT + 1))
     fi
     
     echo "  📝 First 5 lines:"
     head -5 "$manifest" | sed 's/^/    /'
+    echo ""
+done
+
+echo "========================================="
+echo "📊 MANIFEST CHECK SUMMARY:"
+echo "   Errors: $ERROR_COUNT"
+echo "   Warnings: $WARNING_COUNT"
+echo "========================================="
+
+if [ "$ERROR_COUNT" -gt 0 ]; then
+    echo "❌ Manifest validation failed with $ERROR_COUNT errors"
+    echo "🔧 Please fix the above errors before building"
+    exit 1
+else
+    echo "✅ All manifest files are valid"
+fi
     echo ""
 done

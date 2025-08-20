@@ -137,6 +137,49 @@ jobs:
           chmod +x check-manifests.sh
           ./check-manifests.sh
 
+      - name: Pre-build Validation
+        run: |
+          cd android
+          echo "🔍 Pre-build validation checks..."
+          
+          # Check if all required directories exist
+          echo "📁 Checking required directories:"
+          for plugin in "capacitor-camera" "capacitor-filesystem" "capacitor-community-admob" "codetrix-studio-capacitor-google-auth"; do
+            if [ -d "../node_modules/@${plugin//-/\/}/android/src/main/java" ]; then
+              echo "  ✅ $plugin main java directory exists"
+            else
+              echo "  ⚠️  $plugin main java directory not found"
+            fi
+            
+            if [ -d "../node_modules/@${plugin//-/\/}/android/src/debug/java" ]; then
+              echo "  ✅ $plugin debug java directory exists"
+            else
+              echo "  ⚠️  $plugin debug java directory not found"
+            fi
+          done
+          
+          # Check gradle files
+          echo "📝 Checking gradle files:"
+          if [ -f "build.gradle" ]; then
+            echo "  ✅ Main build.gradle exists"
+          else
+            echo "  ❌ Main build.gradle missing"
+          fi
+          
+          if [ -f "app/build.gradle" ]; then
+            echo "  ✅ App build.gradle exists"
+          else
+            echo "  ❌ App build.gradle missing"
+          fi
+          
+          # Check for common issues
+          echo "🔧 Checking for common configuration issues:"
+          if grep -q "jcenter" build.gradle app/build.gradle 2>/dev/null; then
+            echo "  ⚠️  Found jcenter() references (should use mavenCentral)"
+          else
+            echo "  ✅ No jcenter() references found"
+          fi
+
       - name: Build Debug APK
         run: |
           cd android
@@ -147,19 +190,75 @@ jobs:
           ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-output.log
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
-            echo "❌ BUILD FAILED"
+            echo "❌ BUILD FAILED with exit code: $BUILD_EXIT_CODE"
             echo ""
-            echo "=== COMPLETE ERROR LOG (Last 150 lines) ==="
-            tail -150 build-output.log
+            
+            # === EXACT ERROR EXTRACTION ===
+            echo "========================================="
+            echo "🔍 EXACT BUILD ERROR DETAILS"
+            echo "========================================="
+            
+            # Extract specific error message
+            EXACT_ERROR=$(grep -E "FAILURE:|BUILD FAILED|Error:|Exception:" build-output.log | head -10)
+            if [ ! -z "$EXACT_ERROR" ]; then
+              echo "📍 Primary Error Messages:"
+              echo "$EXACT_ERROR"
+              echo ""
+            fi
+            
+            # Extract failed tasks
+            FAILED_TASKS=$(grep -E "> Task.*FAILED|Execution failed for task" build-output.log | head -10)
+            if [ ! -z "$FAILED_TASKS" ]; then
+              echo "🔧 Failed Tasks:"
+              echo "$FAILED_TASKS"
+              echo ""
+            fi
+            
+            # Extract compilation errors
+            COMPILE_ERRORS=$(grep -E "Compilation failed|compilation.*error|cannot find symbol" build-output.log | head -10)
+            if [ ! -z "$COMPILE_ERRORS" ]; then
+              echo "🔨 Compilation Errors:"
+              echo "$COMPILE_ERRORS"
+              echo ""
+            fi
+            
+            # Extract manifest errors
+            MANIFEST_ERRORS=$(grep -E "AndroidManifest\.xml|manifest.*error|manifest.*merge.*failed" build-output.log | head -10)
+            if [ ! -z "$MANIFEST_ERRORS" ]; then
+              echo "📋 Manifest Processing Errors:"
+              echo "$MANIFEST_ERRORS"
+              echo ""
+            fi
+            
+            echo "========================================="
+            echo "📋 DETAILED ERROR BREAKDOWN"
+            echo "========================================="
+            
+            # === MANIFEST ERRORS ===
+            echo "🔍 1. MANIFEST PROCESSING ERRORS:"
+            grep -i -A3 -B3 "processDebugManifest\|manifest.*error\|package.*error" build-output.log | head -20
             echo ""
-            echo "=== MANIFEST PROCESSING ERRORS ==="
-            grep -i -A5 -B5 "manifest.*error\|package.*found\|androidmanifest.*error\|manifest.*merge" build-output.log | tail -30
+            
+            # === DEPENDENCY ERRORS ===
+            echo "🔍 2. DEPENDENCY/CLASSPATH ERRORS:"
+            grep -i -A3 -B3 "dependency.*failed\|could not resolve\|not found.*java\|classpath.*error" build-output.log | head -20
             echo ""
-            echo "=== TASK FAILURES ==="
-            grep -i -A3 -B3 "task.*failed\|execution failed" build-output.log | tail -20
+            
+            # === GRADLE TASK ERRORS ===
+            echo "🔍 3. GRADLE TASK FAILURES:"
+            grep -i -A5 -B2 "task.*failed\|execution failed" build-output.log | head -30
             echo ""
-            echo "=== DEPENDENCY ERRORS ==="
-            grep -i -A3 -B3 "dependency\|resolution.*failed\|could not resolve" build-output.log | tail -15
+            
+            # === BUILD CONFIGURATION ERRORS ===
+            echo "🔍 4. BUILD CONFIGURATION ERRORS:"
+            grep -i -A3 -B3 "build.*failed\|configuration.*failed\|namespace.*error" build-output.log | head -15
+            echo ""
+            
+            echo "========================================="
+            echo "📄 COMPLETE ERROR LOG (Last 100 lines)"
+            echo "========================================="
+            tail -100 build-output.log
+            
             exit 1
           fi
         env:
