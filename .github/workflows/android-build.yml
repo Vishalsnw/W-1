@@ -58,7 +58,7 @@ jobs:
           npm install @capacitor/filesystem@^5.2.2 --save
           npm install @codetrix-studio/capacitor-google-auth@^1.3.2 --save
 
-      - name: Patch Capacitor Plugins (remove jcenter + add namespace)
+      - name: Patch Capacitor Plugins (remove jcenter + add namespace + fix manifests)
         run: |
           echo "🔧 Patching Capacitor plugins build.gradle..."
           PLUGINS=(
@@ -83,6 +83,15 @@ jobs:
               echo "⚠️ Skipping, not found: $FILE"
             fi
           done
+          
+          echo "🔧 Patching AndroidManifest.xml files..."
+          # Fix Google Auth AndroidManifest.xml
+          GOOGLE_AUTH_MANIFEST="node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/AndroidManifest.xml"
+          if [ -f "$GOOGLE_AUTH_MANIFEST" ]; then
+            echo "👉 Removing package attribute from $GOOGLE_AUTH_MANIFEST"
+            sed -i 's/package="[^"]*"//g' "$GOOGLE_AUTH_MANIFEST"
+          fi
+          
           echo "✅ All plugins patched."
 
       - name: Generate Gradle Wrapper
@@ -102,8 +111,13 @@ jobs:
           ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.log
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
-            echo "❌ BUILD FAILED - Last 50 lines of build output:"
-            tail -50 build-output.log
+            echo "❌ BUILD FAILED"
+            echo "=== ERROR SUMMARY ==="
+            grep -i "error\|failed\|exception\|caused by" build-output.log | tail -20
+            echo "=== MANIFEST ERRORS ==="
+            grep -i "manifest\|package.*found" build-output.log | tail -10
+            echo "=== GRADLE ERRORS ==="
+            grep -i "gradle\|dependency\|resolution" build-output.log | tail -10
             exit 1
           fi
         env:
