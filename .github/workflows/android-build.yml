@@ -123,21 +123,38 @@ jobs:
             echo "📌 ERROR SUMMARY"
             echo "========================================="
 
+            FOUND_ERRORS=0
+
             echo "🔍 Manifest Errors:"
-            grep -i -E "AndroidManifest\.xml|manifest.*error|namespace.*error" build-output.log | uniq || true
+            if grep -i -E "AndroidManifest\.xml|manifest.*error|namespace.*error" build-output.log | uniq; then
+              FOUND_ERRORS=1
+            fi
             echo ""
 
             echo "🔨 Compilation Errors:"
-            grep -i -E "Compilation failed|cannot find symbol|error:" build-output.log | uniq || true
+            if grep -i -E "Compilation failed|cannot find symbol|error:" build-output.log | uniq; then
+              FOUND_ERRORS=1
+            fi
             echo ""
 
             echo "📦 Dependency Errors:"
-            grep -i -E "could not resolve|dependency.*failed|not found" build-output.log | uniq || true
+            if grep -i -E "could not resolve|dependency.*failed|not found" build-output.log | uniq; then
+              FOUND_ERRORS=1
+            fi
             echo ""
 
             echo "⚙️ Gradle Task Failures:"
-            grep -i -E "> Task.*FAILED|Execution failed for task" build-output.log | uniq || true
+            if grep -i -E "> Task.*FAILED|Execution failed for task" build-output.log | uniq; then
+              FOUND_ERRORS=1
+            fi
             echo ""
+
+            if [ "$FOUND_ERRORS" -eq 0 ]; then
+              echo "⚠️ No direct error match found. Showing last 200 lines for context:"
+              echo "-----------------------------------------"
+              tail -200 build-output.log
+              echo "-----------------------------------------"
+            fi
 
             exit 1
           fi
