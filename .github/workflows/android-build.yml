@@ -114,8 +114,8 @@ jobs:
         run: |
           cd android
           echo "🔧 Running Gradle build..."
-          ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-output.log
-          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          ./gradlew assembleDebug --stacktrace --info > build-output.log 2>&1
+          BUILD_EXIT_CODE=$?
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED"
             echo ""
@@ -138,11 +138,6 @@ jobs:
             echo "⚙️ Gradle Task Failures:"
             grep -i -E "> Task.*FAILED|Execution failed for task" build-output.log | uniq || true
             echo ""
-
-            echo "========================================="
-            echo "📄 LAST 100 LINES OF LOG"
-            echo "========================================="
-            tail -100 build-output.log
 
             exit 1
           fi
