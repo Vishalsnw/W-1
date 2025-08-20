@@ -76,8 +76,18 @@ jobs:
               sed -i 's/jcenter()/mavenCentral()\ngoogle()/' "$FILE"
               # add namespace if missing
               if grep -q "android {" "$FILE" && ! grep -q "namespace" "$FILE"; then
-                PACKAGE_NAME=$(basename $(dirname $FILE))
-                sed -i "/android {/a \    namespace \"com.capacitor.$PACKAGE_NAME\"" "$FILE"
+                PLUGIN_NAME=$(basename $(dirname $(dirname $FILE)))
+                case $PLUGIN_NAME in
+                  "capacitor-google-auth")
+                    sed -i "/android {/a \    namespace \"com.codetrixstudio.capacitor.GoogleAuth\"" "$FILE"
+                    ;;
+                  "admob")
+                    sed -i "/android {/a \    namespace \"com.getcapacitor.community.admob\"" "$FILE"
+                    ;;
+                  *)
+                    sed -i "/android {/a \    namespace \"com.capacitorjs.plugins.$PLUGIN_NAME\"" "$FILE"
+                    ;;
+                esac
               fi
             else
               echo "⚠️ Skipping, not found: $FILE"
@@ -85,23 +95,21 @@ jobs:
           done
           
           echo "🔧 Patching AndroidManifest.xml files..."
-          # Fix Google Auth AndroidManifest.xml
-          GOOGLE_AUTH_MANIFEST="node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/AndroidManifest.xml"
-          if [ -f "$GOOGLE_AUTH_MANIFEST" ]; then
-            echo "👉 Cleaning $GOOGLE_AUTH_MANIFEST"
-            # Remove package attribute completely
-            sed -i 's/package="[^"]*"//g' "$GOOGLE_AUTH_MANIFEST"
-            # Remove any empty package attributes
-            sed -i 's/package=""//g' "$GOOGLE_AUTH_MANIFEST"
-            # Clean up any malformed manifest tags
-            sed -i 's/<manifest[^>]*package="[^"]*"/<manifest/g' "$GOOGLE_AUTH_MANIFEST"
-          fi
-          
-          # Also check other plugin manifests
+          # Fix all plugin AndroidManifest.xml files
           find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" | while read manifest; do
             echo "👉 Cleaning package attribute from $manifest"
+            # Remove package attribute completely
             sed -i 's/package="[^"]*"//g' "$manifest"
+            sed -i 's/package=""//g' "$manifest"
+            # Clean up manifest opening tag
+            sed -i 's/<manifest[^>]*package="[^"]*"[^>]*>/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/g' "$manifest"
+            # Show what we changed
+            echo "   Modified: $manifest"
+            head -5 "$manifest"
           done
+          
+          echo "🔧 Debug: Checking for any remaining package attributes..."
+          find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" -exec grep -l "package=" {} \; || echo "✅ No package attributes found"
           
           echo "✅ All plugins patched."
 
@@ -116,24 +124,35 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
+      - name: Validate AndroidManifest files
+        run: |
+          cd android
+          chmod +x check-manifests.sh
+          ./check-manifests.sh
+
       - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace 2>&1 | tee build-output.log
+          echo "🔧 Debug: Checking project structure before build..."
+          find . -name "AndroidManifest.xml" -exec echo "Found manifest: {}" \; -exec head -3 {} \;
+          
+          echo "🔧 Running Gradle build..."
+          ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-output.log
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED"
-            echo "=== COMPLETE ERROR LOG (Last 100 lines) ==="
-            tail -100 build-output.log
             echo ""
-            echo "=== ERROR SUMMARY ==="
-            grep -i "error\|failed\|exception\|caused by" build-output.log | tail -20
+            echo "=== COMPLETE ERROR LOG (Last 150 lines) ==="
+            tail -150 build-output.log
             echo ""
-            echo "=== MANIFEST ERRORS ==="
-            grep -i "manifest\|package.*found\|androidmanifest" build-output.log | tail -15
+            echo "=== MANIFEST PROCESSING ERRORS ==="
+            grep -i -A5 -B5 "manifest.*error\|package.*found\|androidmanifest.*error\|manifest.*merge" build-output.log | tail -30
             echo ""
-            echo "=== GRADLE ERRORS ==="
-            grep -i "gradle\|dependency\|resolution\|task.*failed" build-output.log | tail -15
+            echo "=== TASK FAILURES ==="
+            grep -i -A3 -B3 "task.*failed\|execution failed" build-output.log | tail -20
+            echo ""
+            echo "=== DEPENDENCY ERRORS ==="
+            grep -i -A3 -B3 "dependency\|resolution.*failed\|could not resolve" build-output.log | tail -15
             exit 1
           fi
         env:
