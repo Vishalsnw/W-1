@@ -20,8 +20,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true"
-        tools:replace="android:allowBackup">
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name="com.vishal.whatsorder.MainActivity"

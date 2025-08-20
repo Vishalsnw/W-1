@@ -88,9 +88,20 @@ jobs:
           # Fix Google Auth AndroidManifest.xml
           GOOGLE_AUTH_MANIFEST="node_modules/@codetrix-studio/capacitor-google-auth/android/src/main/AndroidManifest.xml"
           if [ -f "$GOOGLE_AUTH_MANIFEST" ]; then
-            echo "👉 Removing package attribute from $GOOGLE_AUTH_MANIFEST"
+            echo "👉 Cleaning $GOOGLE_AUTH_MANIFEST"
+            # Remove package attribute completely
             sed -i 's/package="[^"]*"//g' "$GOOGLE_AUTH_MANIFEST"
+            # Remove any empty package attributes
+            sed -i 's/package=""//g' "$GOOGLE_AUTH_MANIFEST"
+            # Clean up any malformed manifest tags
+            sed -i 's/<manifest[^>]*package="[^"]*"/<manifest/g' "$GOOGLE_AUTH_MANIFEST"
           fi
+          
+          # Also check other plugin manifests
+          find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" | while read manifest; do
+            echo "👉 Cleaning package attribute from $manifest"
+            sed -i 's/package="[^"]*"//g' "$manifest"
+          done
           
           echo "✅ All plugins patched."
 
@@ -112,12 +123,17 @@ jobs:
           BUILD_EXIT_CODE=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED"
+            echo "=== COMPLETE ERROR LOG (Last 100 lines) ==="
+            tail -100 build-output.log
+            echo ""
             echo "=== ERROR SUMMARY ==="
             grep -i "error\|failed\|exception\|caused by" build-output.log | tail -20
+            echo ""
             echo "=== MANIFEST ERRORS ==="
-            grep -i "manifest\|package.*found" build-output.log | tail -10
+            grep -i "manifest\|package.*found\|androidmanifest" build-output.log | tail -15
+            echo ""
             echo "=== GRADLE ERRORS ==="
-            grep -i "gradle\|dependency\|resolution" build-output.log | tail -10
+            grep -i "gradle\|dependency\|resolution\|task.*failed" build-output.log | tail -15
             exit 1
           fi
         env:
