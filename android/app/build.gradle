@@ -4,6 +4,8 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
+apply from: '../capacitor-google-auth-fix.gradle'
+
 android {
     namespace "com.vishal.whatsorder"
     compileSdk 34
@@ -67,7 +69,7 @@ dependencies {
 
     // Capacitor core module
     implementation project(":capacitor-android")
-    
+
     // Capacitor community / plugins
     implementation project(':capacitor-community-admob')
     implementation project(':capacitor-camera')

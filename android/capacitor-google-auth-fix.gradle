@@ -65,3 +65,17 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
 }
+android {
+    sourceSets {
+        main {
+            manifest.srcFile 'capacitor-google-auth-AndroidManifest.xml'
+        }
+    }
+}
+
+// Fix for newer Android Gradle Plugin versions
+android.applicationVariants.all { variant ->
+    variant.outputs.all { output ->
+        variant.mergedFlavor.manifestPlaceholders.put("package", android.defaultConfig.applicationId)
+    }
+}
