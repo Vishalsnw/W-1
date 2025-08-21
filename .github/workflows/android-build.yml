@@ -127,30 +127,48 @@ jobs:
         run: |
           cd android
           echo "🔧 Cleaning previous builds..."
-          ./gradlew clean --stacktrace
+          ./gradlew clean --stacktrace --info
           
+          echo ""
           echo "🔧 Building Debug APK..."
-          ./gradlew assembleDebug --stacktrace --info --no-daemon > build-output.log 2>&1
+          echo "========================================="
+          
+          # Run build with full output to console
+          set +e  # Don't exit on error
+          ./gradlew assembleDebug --stacktrace --info --warning-mode all --no-daemon
           BUILD_EXIT_CODE=$?
+          set -e  # Re-enable exit on error
+          
+          echo ""
+          echo "========================================="
+          echo "📊 BUILD RESULT: Exit code $BUILD_EXIT_CODE"
+          echo "========================================="
           
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
-            echo "❌ BUILD FAILED"
-            echo "========================================="
-            echo "📌 BUILD ERROR LOG"
-            echo "========================================="
+            echo "❌ BUILD FAILED WITH EXIT CODE: $BUILD_EXIT_CODE"
+            echo ""
+            echo "🔍 Checking for common issues..."
             
-            # Show recent errors
-            echo "🔍 Recent errors:"
-            grep -i -A 5 -B 5 "error\|failed\|exception" build-output.log | tail -50
+            # Check for manifest issues
+            echo "📋 Checking AndroidManifest.xml files:"
+            find . -name "AndroidManifest.xml" -exec echo "Found: {}" \; -exec head -10 {} \;
             
             echo ""
-            echo "📋 Full log (last 100 lines):"
-            tail -100 build-output.log
+            echo "📋 Checking Gradle files for syntax errors:"
+            find . -name "build.gradle" -exec echo "Checking: {}" \; -exec gradle -q help -b {} \; 2>&1 | head -20
             
-            exit 1
+            echo ""
+            echo "📋 Last 50 lines of any error logs:"
+            find . -name "*.log" -exec tail -50 {} \; 2>/dev/null || echo "No log files found"
+            
+            echo ""
+            echo "📋 Gradle daemon status:"
+            ./gradlew --status || echo "Could not get Gradle status"
+            
+            exit $BUILD_EXIT_CODE
           else
             echo "✅ Build completed successfully!"
-            ls -la app/build/outputs/apk/debug/
+            ls -la app/build/outputs/apk/debug/ || echo "APK directory not found"
           fi
         env:
           GRADLE_OPTS: "-Xmx6g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx4g'"
