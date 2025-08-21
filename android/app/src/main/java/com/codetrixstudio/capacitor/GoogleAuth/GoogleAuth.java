@@ -1,4 +1,3 @@
-
 package com.codetrixstudio.capacitor.GoogleAuth;
 
 import android.content.Intent;
@@ -29,7 +28,7 @@ public class GoogleAuth extends Plugin {
                 .requestEmail()
                 .requestProfile()
                 .build();
-        
+
         mGoogleSignInClient = GoogleSignIn.getClient(getActivity(), gso);
     }
 
@@ -53,7 +52,7 @@ public class GoogleAuth extends Plugin {
     @Override
     protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
         super.handleOnActivityResult(requestCode, resultCode, data);
-        
+
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
