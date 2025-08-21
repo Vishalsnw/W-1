@@ -33,6 +33,7 @@ jobs:
         with:
           api-level: 34
           build-tools: 34.0.0
+          ndk-version: 25.1.8937393
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -52,114 +53,107 @@ jobs:
 
       - name: Install Capacitor plugins
         run: |
-          npm install @capacitor-community/admob@^7.0.3 --save
-          npm install @capacitor/android@^5.7.8 --save  
-          npm install @capacitor/camera@^5.0.10 --save
-          npm install @capacitor/filesystem@^5.2.2 --save
-          npm install @codetrix-studio/capacitor-google-auth@^1.3.2 --save
+          npm install @capacitor/cli@latest
+          npm install @capacitor/core@latest
+          npm install @capacitor/android@latest
+          npm install @capacitor-community/admob@latest
+          npm install @capacitor/camera@latest
+          npm install @capacitor/filesystem@latest
+          npm install @codetrix-studio/capacitor-google-auth@latest
 
-      - name: Patch Capacitor Plugins (remove jcenter + add namespace + fix manifests)
+      - name: Sync Capacitor and patch plugins
         run: |
-          echo "🔧 Patching Capacitor plugins build.gradle..."
-          PLUGINS=(
-            "node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
-            "node_modules/@capacitor-community/admob/android/build.gradle"
-            "node_modules/@capacitor/camera/android/build.gradle"
-            "node_modules/@capacitor/filesystem/android/build.gradle"
-            "node_modules/@capacitor/android/capacitor/build.gradle"
-          )
-
-          for FILE in "${PLUGINS[@]}"; do
-            if [ -f "$FILE" ]; then
-              echo "👉 Patching $FILE"
-              sed -i 's/jcenter()/mavenCentral()\ngoogle()/' "$FILE"
-              if grep -q "android {" "$FILE" && ! grep -q "namespace" "$FILE"; then
-                PLUGIN_NAME=$(basename $(dirname $(dirname $FILE)))
+          echo "🔧 Syncing Capacitor..."
+          npx cap sync android
+          
+          echo "🔧 Patching plugin build.gradle files..."
+          find node_modules -name "build.gradle" -path "*/android/*" | while read gradle_file; do
+            if [ -f "$gradle_file" ]; then
+              echo "👉 Patching $gradle_file"
+              # Replace jcenter with mavenCentral
+              sed -i 's/jcenter()/mavenCentral()/' "$gradle_file"
+              # Ensure google() repository exists
+              if ! grep -q "google()" "$gradle_file"; then
+                sed -i '/repositories {/a \        google()' "$gradle_file"
+              fi
+              # Add namespace if missing
+              if grep -q "android {" "$gradle_file" && ! grep -q "namespace" "$gradle_file"; then
+                PLUGIN_DIR=$(dirname $(dirname $gradle_file))
+                PLUGIN_NAME=$(basename $PLUGIN_DIR)
                 case $PLUGIN_NAME in
-                  "capacitor-google-auth")
-                    sed -i "/android {/a \    namespace \"com.codetrixstudio.capacitor.GoogleAuth\"" "$FILE"
+                  "capacitor-google-auth"|"GoogleAuth")
+                    sed -i "/android {/a \    namespace \"com.codetrixstudio.capacitor.GoogleAuth\"" "$gradle_file"
                     ;;
                   "admob")
-                    sed -i "/android {/a \    namespace \"com.getcapacitor.community.admob\"" "$FILE"
+                    sed -i "/android {/a \    namespace \"com.getcapacitor.community.admob\"" "$gradle_file"
                     ;;
                   *)
-                    sed -i "/android {/a \    namespace \"com.capacitorjs.plugins.$PLUGIN_NAME\"" "$FILE"
+                    sed -i "/android {/a \    namespace \"com.capacitorjs.plugins.$PLUGIN_NAME\"" "$gradle_file"
                     ;;
                 esac
               fi
             fi
           done
 
-          echo "🔧 Cleaning AndroidManifest.xml files..."
-          find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" | while read manifest; do
-            sed -i 's/package="[^"]*"//g' "$manifest"
-            sed -i 's/package=""//g' "$manifest"
-            sed -i 's/<manifest[^>]*package="[^"]*"[^>]*>/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/g' "$manifest"
+          echo "🔧 Fixing AndroidManifest.xml files..."
+          find . -name "AndroidManifest.xml" | while read manifest; do
+            if [ -f "$manifest" ]; then
+              # Remove package attributes completely
+              sed -i 's/ package="[^"]*"//g' "$manifest"
+              sed -i 's/package="[^"]*" //g' "$manifest"
+              # Ensure proper xmlns declaration
+              if ! grep -q "xmlns:android" "$manifest"; then
+                sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/' "$manifest"
+              fi
+            fi
           done
 
-          echo "✅ Plugins patched."
+          echo "✅ Capacitor sync and patching completed."
 
-      - name: Generate Gradle Wrapper
+      - name: Setup Gradle Wrapper
         run: |
           cd android
           if [ ! -f gradlew ]; then
-            gradle wrapper --gradle-version 8.2.1 --distribution-type all
+            echo "Generating Gradle wrapper..."
+            gradle wrapper --gradle-version 8.4 --distribution-type all
           fi
           chmod +x gradlew
+          echo "Gradle wrapper ready"
 
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
-      - name: Build Debug APK
+      - name: Clean and Build Debug APK
         run: |
           cd android
-          echo "🔧 Running Gradle build..."
-          ./gradlew assembleDebug --stacktrace --info > build-output.log 2>&1
+          echo "🔧 Cleaning previous builds..."
+          ./gradlew clean --stacktrace
+          
+          echo "🔧 Building Debug APK..."
+          ./gradlew assembleDebug --stacktrace --info --no-daemon > build-output.log 2>&1
           BUILD_EXIT_CODE=$?
+          
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED"
-            echo ""
             echo "========================================="
-            echo "📌 ERROR SUMMARY"
+            echo "📌 BUILD ERROR LOG"
             echo "========================================="
-
-            FOUND_ERRORS=0
-
-            echo "🔍 Manifest Errors:"
-            if grep -i -E "AndroidManifest\.xml|manifest.*error|namespace.*error" build-output.log | uniq; then
-              FOUND_ERRORS=1
-            fi
+            
+            # Show recent errors
+            echo "🔍 Recent errors:"
+            grep -i -A 5 -B 5 "error\|failed\|exception" build-output.log | tail -50
+            
             echo ""
-
-            echo "🔨 Compilation Errors:"
-            if grep -i -E "Compilation failed|cannot find symbol|error:" build-output.log | uniq; then
-              FOUND_ERRORS=1
-            fi
-            echo ""
-
-            echo "📦 Dependency Errors:"
-            if grep -i -E "could not resolve|dependency.*failed|not found" build-output.log | uniq; then
-              FOUND_ERRORS=1
-            fi
-            echo ""
-
-            echo "⚙️ Gradle Task Failures:"
-            if grep -i -E "> Task.*FAILED|Execution failed for task" build-output.log | uniq; then
-              FOUND_ERRORS=1
-            fi
-            echo ""
-
-            if [ "$FOUND_ERRORS" -eq 0 ]; then
-              echo "⚠️ No direct error match found. Showing last 200 lines for context:"
-              echo "-----------------------------------------"
-              tail -200 build-output.log
-              echo "-----------------------------------------"
-            fi
-
+            echo "📋 Full log (last 100 lines):"
+            tail -100 build-output.log
+            
             exit 1
+          else
+            echo "✅ Build completed successfully!"
+            ls -la app/build/outputs/apk/debug/
           fi
         env:
-          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false"
+          GRADLE_OPTS: "-Xmx6g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx4g'"
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4

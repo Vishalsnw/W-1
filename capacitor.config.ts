@@ -5,6 +5,7 @@ const config: CapacitorConfig = {
   appId: 'com.vishal.whatsorder',
   appName: 'WhatsOrder',
   webDir: 'www',
+  bundledWebRuntime: false,
   server: {
     androidScheme: 'https',
     allowNavigation: [
@@ -20,9 +21,6 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: true
   },
   plugins: {
-    Browser: {
-      presentationStyle: 'fullscreen'
-    },
     AdMob: {
       appId: 'ca-app-pub-5538218540896625~5131951256',
       testingDevices: [],
