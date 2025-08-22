@@ -33,4 +33,6 @@ if [ "$ERROR_COUNT" -gt 0 ]; then
     exit 1
 else
     echo "✅ All manifests are valid"
+    exit 0
+fiests are valid"
 fi
