@@ -173,9 +173,89 @@ jobs:
         env:
           GRADLE_OPTS: "-Xmx6g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx4g'"
 
+      - name: Run Android Tests
+        run: |
+          cd android
+          echo "🧪 Running Android unit tests..."
+          ./gradlew testDebugUnitTest --stacktrace --info
+          
+          echo "🧪 Running Android instrumented tests..."
+          ./gradlew connectedDebugAndroidTest --stacktrace --info || echo "Instrumented tests skipped (no device/emulator)"
+
+      - name: Generate Test Reports
+        run: |
+          cd android
+          echo "📊 Generating test reports..."
+          ./gradlew jacocoTestReport --stacktrace --info || echo "Test coverage report generation skipped"
+
+      - name: Lint Android Code
+        run: |
+          cd android
+          echo "🔍 Running Android lint checks..."
+          ./gradlew lintDebug --stacktrace --info
+          
+          echo "📋 Lint results:"
+          find . -name "lint-results*.html" -exec echo "Found: {}" \; || echo "No lint reports found"
+
+      - name: Analyze APK
+        run: |
+          cd android
+          echo "📦 Analyzing APK size and contents..."
+          if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+            ls -lah app/build/outputs/apk/debug/app-debug.apk
+            echo ""
+            echo "📊 APK Analysis:"
+            ./gradlew analyzeDebugBundle --stacktrace || echo "Bundle analysis not available"
+            
+            echo ""
+            echo "📂 APK Contents (top level):"
+            unzip -l app/build/outputs/apk/debug/app-debug.apk | head -20
+          else
+            echo "❌ APK not found for analysis"
+          fi
+
+      - name: Collect Build Artifacts
+        run: |
+          echo "📁 Collecting all build artifacts..."
+          mkdir -p build-artifacts
+          
+          # Copy APK
+          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk build-artifacts/
+          fi
+          
+          # Copy mapping files (if any)
+          find android -name "mapping.txt" -exec cp {} build-artifacts/ \; 2>/dev/null || echo "No mapping files found"
+          
+          # Copy lint reports
+          find android -name "lint-results*.html" -exec cp {} build-artifacts/ \; 2>/dev/null || echo "No lint reports found"
+          
+          # Copy test reports
+          find android -path "*/test-results/testDebugUnitTest/*.xml" -exec cp {} build-artifacts/ \; 2>/dev/null || echo "No test results found"
+          
+          ls -la build-artifacts/
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: whatsorder-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsorder-build-artifacts
+          path: build-artifacts/
+          retention-days: 30
+
+      - name: Upload Gradle Build Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gradle-build-logs
+          path: |
+            android/.gradle/*/fileHashes/
+            android/**/build/reports/
+            android/**/build/test-results/
+          retention-days: 7
