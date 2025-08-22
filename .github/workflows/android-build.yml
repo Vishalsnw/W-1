@@ -120,6 +120,13 @@ jobs:
           chmod +x gradlew
           echo "Gradle wrapper ready"
 
+      - name: Fix Build Issues
+        run: |
+          cd android
+          echo "🔧 Making fix-build-issues.sh executable and running it..."
+          chmod +x fix-build-issues.sh
+          ./fix-build-issues.sh
+
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
