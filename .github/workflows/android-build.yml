@@ -114,10 +114,19 @@ jobs:
         run: |
           cd android
           if [ ! -f gradlew ]; then
-            echo "Generating Gradle wrapper..."
+            echo "Generating Gradle wrapper with compatible version..."
             gradle wrapper --gradle-version 8.4 --distribution-type all
           fi
           chmod +x gradlew
+          
+          # Verify Gradle wrapper properties
+          echo "📋 Gradle wrapper configuration:"
+          cat gradle/wrapper/gradle-wrapper.properties
+          
+          # Test Gradle daemon with compatible settings
+          echo "🔧 Testing Gradle with compatible JVM settings..."
+          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=true -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=512m'"
+          ./gradlew --version --no-daemon
           echo "Gradle wrapper ready"
 
       - name: Fix Build Issues
@@ -133,8 +142,12 @@ jobs:
       - name: Clean and Build Debug APK
         run: |
           cd android
+          echo "🔧 Setting up proper JVM environment..."
+          export JAVA_OPTS="-Xmx3g -XX:MaxMetaspaceSize=512m"
+          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
+          
           echo "🔧 Cleaning previous builds..."
-          ./gradlew clean --stacktrace --info
+          ./gradlew clean --stacktrace --info --no-daemon
           
           echo ""
           echo "🔧 Building Debug APK..."
@@ -142,7 +155,7 @@ jobs:
           
           # Run build with full output to console
           set +e  # Don't exit on error
-          ./gradlew assembleDebug --stacktrace --info --warning-mode all --no-daemon
+          ./gradlew assembleDebug --stacktrace --info --warning-mode all --no-daemon --max-workers=2
           BUILD_EXIT_CODE=$?
           set -e  # Re-enable exit on error
           
@@ -178,7 +191,9 @@ jobs:
             ls -la app/build/outputs/apk/debug/ || echo "APK directory not found"
           fi
         env:
-          GRADLE_OPTS: "-Xmx6g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx4g'"
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
+          GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+          _JAVA_OPTIONS: "-Xmx3g -XX:MaxMetaspaceSize=512m"
 
       - name: Run Android Tests
         run: |
