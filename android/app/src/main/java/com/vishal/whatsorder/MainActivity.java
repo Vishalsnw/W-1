@@ -1,23 +1,24 @@
 package com.vishal.whatsorder;
 
+import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.community.admob.AdMob;
 import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth;
 import io.capawesome.capacitorjs.plugins.firebase.crashlytics.FirebaseCrashlyticsPlugin;
+import java.util.ArrayList;
+import com.getcapacitor.Plugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
-    public void onCreate(android.os.Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        try {
-            // Register plugins
-            registerPlugin(AdMob.class);
-            registerPlugin(GoogleAuth.class);
-            registerPlugin(FirebaseCrashlyticsPlugin.class);
-        } catch (Exception e) {
-            // Log error but don't crash the app
-            android.util.Log.e("MainActivity", "Error registering plugins", e);
-        }
+        // Initializes the Bridge and plugins to be used locally
+        this.init(savedInstanceState, new ArrayList<Class<? extends Plugin>>() {{
+            // Additional plugins you've registered can be added here
+            add(GoogleAuth.class);
+            add(AdMob.class);
+            add(FirebaseCrashlyticsPlugin.class);
+        }});
     }
 }

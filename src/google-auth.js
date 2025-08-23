@@ -10,7 +10,7 @@ async function initializeGoogleAuth() {
   try {
     if (Capacitor.isNativePlatform()) {
       await GoogleAuth.initialize({
-        clientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
+        clientId: '735632166574-XXXXX.apps.googleusercontent.com', // Use proper OAuth client ID
         scopes: ['profile', 'email'],
         grantOfflineAccess: true,
       });
