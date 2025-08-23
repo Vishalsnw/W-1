@@ -26,3 +26,52 @@ args = "echo \"To build: npm run build\""
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "echo \"To open Android Studio: npm run open:android\""
+
+[[workflows.workflow]]
+name = "Build Android APK"
+author = 46805126
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"🏗️ Building Android APK...\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd android"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "chmod +x *.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./test-firebase.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./validate-manifests.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./fix-build-issues.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./gradlew clean"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx cap sync android"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./gradlew assembleDebug --stacktrace"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"✅ APK built successfully!\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "ls -la app/build/outputs/apk/debug/"
