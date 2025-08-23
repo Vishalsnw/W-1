@@ -65,7 +65,7 @@ jobs:
         run: |
           echo "🔧 Syncing Capacitor..."
           npx cap sync android
-          
+
           echo "🔧 Patching plugin build.gradle files..."
           find node_modules -name "build.gradle" -path "*/android/*" | while read gradle_file; do
             if [ -f "$gradle_file" ]; then
@@ -118,11 +118,11 @@ jobs:
             gradle wrapper --gradle-version 8.4 --distribution-type all
           fi
           chmod +x gradlew
-          
+
           # Verify Gradle wrapper properties
           echo "📋 Gradle wrapper configuration:"
           cat gradle/wrapper/gradle-wrapper.properties
-          
+
           # Test Gradle daemon with compatible settings
           echo "🔧 Testing Gradle with compatible JVM settings..."
           export GRADLE_OPTS="-Xmx3g -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false"
@@ -142,54 +142,10 @@ jobs:
       - name: Clean and Build Debug APK
         run: |
           cd android
-          echo "🔧 Setting up proper JVM environment..."
-          export JAVA_OPTS="-Xmx3g -XX:MaxMetaspaceSize=512m"
-          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
-          
-          echo "🔧 Cleaning previous builds..."
-          ./gradlew clean --stacktrace --info --no-daemon
-          
-          echo ""
-          echo "🔧 Building Debug APK..."
-          echo "========================================="
-          
-          # Run build with full output to console
-          set +e  # Don't exit on error
-          ./gradlew assembleDebug --stacktrace --info --warning-mode all --no-daemon --max-workers=2
-          BUILD_EXIT_CODE=$?
-          set -e  # Re-enable exit on error
-          
-          echo ""
-          echo "========================================="
-          echo "📊 BUILD RESULT: Exit code $BUILD_EXIT_CODE"
-          echo "========================================="
-          
-          if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
-            echo "❌ BUILD FAILED WITH EXIT CODE: $BUILD_EXIT_CODE"
-            echo ""
-            echo "🔍 Checking for common issues..."
-            
-            # Check for manifest issues
-            echo "📋 Checking AndroidManifest.xml files:"
-            find . -name "AndroidManifest.xml" -exec echo "Found: {}" \; -exec head -10 {} \;
-            
-            echo ""
-            echo "📋 Checking Gradle files for syntax errors:"
-            find . -name "build.gradle" -exec echo "Checking: {}" \; -exec gradle -q help -b {} \; 2>&1 | head -20
-            
-            echo ""
-            echo "📋 Last 50 lines of any error logs:"
-            find . -name "*.log" -exec tail -50 {} \; 2>/dev/null || echo "No log files found"
-            
-            echo ""
-            echo "📋 Gradle daemon status:"
-            ./gradlew --status || echo "Could not get Gradle status"
-            
-            exit $BUILD_EXIT_CODE
-          else
-            echo "✅ Build completed successfully!"
-            ls -la app/build/outputs/apk/debug/ || echo "APK directory not found"
-          fi
+          echo "🧹 Cleaning previous builds..."
+          ./gradlew clean --no-daemon
+          echo "🔨 Building Debug APK..."
+          ./gradlew assembleDebug --stacktrace --no-daemon --info
         env:
           GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
           GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
@@ -200,7 +156,7 @@ jobs:
           cd android
           echo "🧪 Running Android unit tests..."
           ./gradlew testDebugUnitTest --stacktrace --info
-          
+
           echo "🧪 Running Android instrumented tests..."
           ./gradlew connectedDebugAndroidTest --stacktrace --info || echo "Instrumented tests skipped (no device/emulator)"
 
@@ -215,7 +171,7 @@ jobs:
           cd android
           echo "🔍 Running Android lint checks..."
           ./gradlew lintDebug --stacktrace --info
-          
+
           echo "📋 Lint results:"
           find . -name "lint-results*.html" -exec echo "Found: {}" \; || echo "No lint reports found"
 
@@ -228,7 +184,7 @@ jobs:
             echo ""
             echo "📊 APK Analysis:"
             ./gradlew analyzeDebugBundle --stacktrace || echo "Bundle analysis not available"
-            
+
             echo ""
             echo "📂 APK Contents (top level):"
             unzip -l app/build/outputs/apk/debug/app-debug.apk | head -20
@@ -240,21 +196,21 @@ jobs:
         run: |
           echo "📁 Collecting all build artifacts..."
           mkdir -p build-artifacts
-          
+
           # Copy APK
           if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
             cp android/app/build/outputs/apk/debug/app-debug.apk build-artifacts/
           fi
-          
+
           # Copy mapping files (if any)
           find android -name "mapping.txt" -exec cp {} build-artifacts/ \; 2>/dev/null || echo "No mapping files found"
-          
+
           # Copy lint reports
           find android -name "lint-results*.html" -exec cp {} build-artifacts/ \; 2>/dev/null || echo "No lint reports found"
-          
+
           # Copy test reports
           find android -path "*/test-results/testDebugUnitTest/*.xml" -exec cp {} build-artifacts/ \; 2>/dev/null || echo "No test results found"
-          
+
           ls -la build-artifacts/
 
       - name: Upload Debug APK
