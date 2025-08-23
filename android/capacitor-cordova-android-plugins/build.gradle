@@ -9,7 +9,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2' // Updated to match your project
+        classpath 'com.android.tools.build:gradle:8.2.2'
     }
 }
 
@@ -17,11 +17,11 @@ apply plugin: 'com.android.library'
 
 android {
     namespace "capacitor.cordova.android.plugins"
-    compileSdk project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34 // Changed to 34+ for Java 9+ compatibility
+    compileSdk cdvCompileSdkVersion // Use the variable from cordova.variables.gradle
     
     defaultConfig {
-        minSdk project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 22
-        targetSdk project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34 // Updated to match compileSdk
+        minSdk cdvMinSdkVersion // Use the variable from cordova.variables.gradle
+        targetSdk cdvTargetSdkVersion // Use the variable from cordova.variables.gradle
         versionCode 1
         versionName "1.0"
     }
@@ -35,7 +35,6 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     
-    // Add Kotlin support if needed
     kotlinOptions {
         jvmTarget = "17"
     }
