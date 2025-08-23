@@ -1,11 +1,20 @@
 
 import { FirebaseCrashlytics } from '@capacitor-firebase/crashlytics';
+import { Capacitor } from '@capacitor/core';
 
 // Initialize Crashlytics
 export async function initializeCrashlytics() {
   try {
-    await FirebaseCrashlytics.setEnabled({ enabled: true });
-    console.log('Crashlytics initialized successfully');
+    // Only initialize on native platforms
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.setEnabled({ enabled: true });
+      console.log('Crashlytics initialized successfully');
+      
+      // Test crashlytics is working
+      await FirebaseCrashlytics.log({ message: 'Crashlytics initialized' });
+    } else {
+      console.log('Crashlytics skipped - not on native platform');
+    }
   } catch (error) {
     console.error('Failed to initialize Crashlytics:', error);
   }
@@ -14,7 +23,9 @@ export async function initializeCrashlytics() {
 // Log custom events
 export async function logEvent(message) {
   try {
-    await FirebaseCrashlytics.log({ message });
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.log({ message });
+    }
   } catch (error) {
     console.error('Failed to log event:', error);
   }
@@ -23,7 +34,9 @@ export async function logEvent(message) {
 // Set user identifier
 export async function setUserId(userId) {
   try {
-    await FirebaseCrashlytics.setUserId({ userId });
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.setUserId({ userId });
+    }
   } catch (error) {
     console.error('Failed to set user ID:', error);
   }
@@ -32,7 +45,9 @@ export async function setUserId(userId) {
 // Set custom attributes
 export async function setCustomKey(key, value) {
   try {
-    await FirebaseCrashlytics.setCustomKey({ key, value: String(value) });
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.setCustomKey({ key, value: String(value) });
+    }
   } catch (error) {
     console.error('Failed to set custom key:', error);
   }
@@ -41,10 +56,13 @@ export async function setCustomKey(key, value) {
 // Record non-fatal errors
 export async function recordException(error, isFatal = false) {
   try {
-    await FirebaseCrashlytics.recordException({
-      message: error.message || 'Unknown error',
-      stacktrace: error.stack || 'No stack trace available'
-    });
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.recordException({
+        message: error.message || 'Unknown error',
+        stacktrace: error.stack || 'No stack trace available'
+      });
+    }
+    console.error('Exception recorded:', error);
   } catch (crashlyticsError) {
     console.error('Failed to record exception:', crashlyticsError);
   }
@@ -53,7 +71,9 @@ export async function recordException(error, isFatal = false) {
 // Crash the app intentionally (for testing only)
 export async function crash() {
   try {
-    await FirebaseCrashlytics.crash();
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.crash();
+    }
   } catch (error) {
     console.error('Failed to crash app:', error);
   }

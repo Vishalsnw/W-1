@@ -2,22 +2,50 @@
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 import { initializeCrashlytics, logEvent, recordException, setUserId } from './crashlytics.js';
 
-// Initialize Google Auth
-GoogleAuth.initialize({
-  clientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
-  scopes: ['profile', 'email'],
-  grantOfflineAccess: true,
-});
+// Initialize Google Auth with error handling
+async function initializeGoogleAuth() {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      await GoogleAuth.initialize({
+        clientId: 'AIzaSyDToGbYrUKjqcVDcKuQKW--H2-grVBGJqg',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      });
+      console.log('Google Auth initialized successfully');
+    }
+  } catch (error) {
+    console.error('Failed to initialize Google Auth:', error);
+    await recordException(error);
+  }
+}
 
-// Initialize Crashlytics
-initializeCrashlytics();
+// Initialize everything
+async function initialize() {
+  try {
+    await initializeCrashlytics();
+    await initializeGoogleAuth();
+    await logEvent('App initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
+    await recordException(error);
+  }
+}
+
+// Call initialize
+initialize();
 
 // Google Sign In function
 export async function signInWithGoogle() {
   try {
     await logEvent('Attempting Google Sign In');
+    
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error('Google Sign In only available on native platforms');
+    }
+    
     const result = await GoogleAuth.signIn();
     console.log('Google Sign In Success:', result);
     
@@ -39,21 +67,25 @@ export async function signInWithGoogle() {
 // Google Sign Out function
 export async function signOutFromGoogle() {
   try {
-    await GoogleAuth.signOut();
-    console.log('Google Sign Out Success');
+    if (Capacitor.isNativePlatform()) {
+      await GoogleAuth.signOut();
+      console.log('Google Sign Out Success');
+      await logEvent('Google Sign Out Success');
+    }
   } catch (error) {
     console.error('Google Sign Out Error:', error);
+    await recordException(error);
     throw error;
   }
 }
 
-// Camera/File Upload functions
+// Camera functions with error handling
 export async function takePicture() {
   try {
-    await logEvent('Attempting to take picture');
+    await logEvent('Taking picture');
     const image = await Camera.getPhoto({
       quality: 90,
-      allowEditing: true,
+      allowEditing: false,
       resultType: CameraResultType.DataUrl,
       source: CameraSource.Camera
     });
@@ -61,60 +93,27 @@ export async function takePicture() {
     await logEvent('Picture taken successfully');
     return image.dataUrl;
   } catch (error) {
-    console.error('Camera Error:', error);
+    console.error('Camera error:', error);
     await recordException(error);
-    await logEvent('Camera failed: ' + error.message);
     throw error;
   }
 }
 
 export async function selectFromGallery() {
   try {
+    await logEvent('Selecting from gallery');
     const image = await Camera.getPhoto({
       quality: 90,
-      allowEditing: true,
+      allowEditing: false,
       resultType: CameraResultType.DataUrl,
       source: CameraSource.Photos
     });
     
+    await logEvent('Gallery selection successful');
     return image.dataUrl;
   } catch (error) {
-    console.error('Gallery Error:', error);
+    console.error('Gallery selection error:', error);
+    await recordException(error);
     throw error;
   }
 }
-
-// Example usage in your web app:
-/*
-// Add this to your existing web app JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-  // Google Sign In button
-  const googleSignInBtn = document.getElementById('google-signin-btn');
-  if (googleSignInBtn) {
-    googleSignInBtn.addEventListener('click', async () => {
-      try {
-        const result = await signInWithGoogle();
-        // Handle successful sign in
-        console.log('User signed in:', result.user);
-      } catch (error) {
-        console.error('Sign in failed:', error);
-      }
-    });
-  }
-  
-  // Camera button
-  const cameraBtn = document.getElementById('camera-btn');
-  if (cameraBtn) {
-    cameraBtn.addEventListener('click', async () => {
-      try {
-        const imageData = await takePicture();
-        // Use the image data
-        const imgElement = document.getElementById('captured-image');
-        imgElement.src = imageData;
-      } catch (error) {
-        console.error('Camera failed:', error);
-      }
-    });
-  }
-});
-*/
