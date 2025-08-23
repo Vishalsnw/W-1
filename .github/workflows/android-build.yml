@@ -114,6 +114,9 @@ jobs:
         run: |
           cd android
           
+          # Create gradle wrapper directory if it doesn't exist
+          mkdir -p gradle/wrapper
+          
           # Force correct Gradle version in wrapper properties
           echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
           echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
@@ -121,13 +124,25 @@ jobs:
           echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
           echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
           
+          # Generate gradlew scripts if they don't exist
+          if [ ! -f "gradlew" ]; then
+            echo "🔧 Generating Gradle wrapper scripts..."
+            gradle wrapper --gradle-version 8.4 --distribution-type all --no-daemon
+          fi
+          
+          # Ensure gradlew is executable
           chmod +x gradlew
+          chmod +x gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
 
+          # Verify files exist
+          echo "📋 Checking Gradle wrapper files:"
+          ls -la gradlew gradle/wrapper/
+          
           # Verify Gradle wrapper properties
           echo "📋 Gradle wrapper configuration:"
           cat gradle/wrapper/gradle-wrapper.properties
 
-          # Test Gradle daemon with compatible settings
+          # Test Gradle with compatible settings
           echo "🔧 Testing Gradle with compatible JVM settings..."
           export GRADLE_OPTS="-Xmx3g -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false"
           ./gradlew --version --no-daemon
