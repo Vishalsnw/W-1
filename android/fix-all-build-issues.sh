@@ -1,129 +1,158 @@
 
 #!/bin/bash
-echo "🔧 Comprehensive Android Build Fix Script"
-echo "=========================================="
+echo "🔧 Comprehensive Android Build Fix Script (Enhanced)"
+echo "===================================================="
 
 # Make scripts executable
 chmod +x *.sh
 
-# 1. Clean all build directories
-echo "🧹 Cleaning build directories..."
+# 1. Clean all build directories and caches FIRST
+echo "🧹 Deep cleaning all build artifacts..."
 rm -rf .gradle
 rm -rf app/build
 rm -rf */build
 rm -rf build
+rm -rf ~/.gradle/caches/
+rm -rf ~/.gradle/daemon/
+rm -rf ~/.gradle/native/
+rm -rf ~/.gradle/wrapper/
 
-# 2. Fix manifest files in project BEFORE sync
-echo "🔧 Pre-sync manifest fixes in project..."
+# 2. Kill any existing gradle daemons
+echo "🔄 Stopping Gradle daemons..."
+./gradlew --stop || true
+pkill -f gradle || true
+
+# 3. Pre-sync manifest fixes (before Capacitor sync)
+echo "🔧 Phase 1: Pre-sync manifest fixes..."
 find . -name "AndroidManifest.xml" -type f | while read manifest; do
-    echo "📄 Pre-processing: $manifest"
+    echo "📄 Pre-fixing: $manifest"
     
-    # Remove package attributes
-    sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
-    sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
+    # Backup original
+    cp "$manifest" "$manifest.pre-fix-backup" 2>/dev/null || true
     
-    # Ensure proper xmlns declaration
+    # Aggressive package attribute removal
+    sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package=[^[:space:]]*//g' "$manifest" 2>/dev/null || true
+    
+    # Fix manifest tag structure
+    sed -i 's/<manifest[[:space:]]*>/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/g' "$manifest" 2>/dev/null || true
+    sed -i 's/<manifest[[:space:]]\+/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android" /g' "$manifest" 2>/dev/null || true
+    
+    # Ensure xmlns declaration exists
     if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
         sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
     fi
-    
-    # Fix malformed manifest tags
-    sed -i 's/<manifest[[:space:]]*>/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/g' "$manifest" 2>/dev/null || true
 done
 
-# 3. Clean Gradle cache BEFORE sync
-echo "🧹 Pre-sync Gradle cache cleanup..."
-rm -rf ~/.gradle/caches/
+# 4. Fix node_modules manifests BEFORE sync
+echo "🔧 Phase 2: Pre-sync node_modules manifest fixes..."
+find ../node_modules -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
+    echo "📄 Pre-fixing node_modules: $manifest"
+    sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package=[^[:space:]]*//g' "$manifest" 2>/dev/null || true
+    if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
+        sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
+    fi
+done
+
+# 5. Force clean Gradle before sync
+echo "🧹 Force Gradle clean before sync..."
 ./gradlew clean --no-daemon || true
 
-# 4. Sync Capacitor (this will regenerate some manifests)
+# 6. Sync Capacitor (this regenerates manifests)
 echo "🔄 Syncing Capacitor..."
 cd ..
-npx cap sync android
+npx cap sync android --force
 cd android
 
-# 5. Post-sync manifest fixes for ALL locations
-echo "🔧 Post-sync comprehensive manifest fixes..."
+# 7. IMMEDIATE post-sync manifest fixes (critical timing)
+echo "🔧 Phase 3: Immediate post-sync manifest fixes..."
+sleep 2  # Brief pause to ensure sync completes
 
-# Fix project manifests again (in case sync regenerated them)
+# Fix ALL manifests again immediately after sync
 find . -name "AndroidManifest.xml" -type f | while read manifest; do
-    echo "📄 Post-sync fixing project: $manifest"
-    sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
-    sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
+    echo "📄 Post-sync fixing: $manifest"
+    sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package=[^[:space:]]*//g' "$manifest" 2>/dev/null || true
     if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
         sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
     fi
 done
 
-# Fix Capacitor core manifests
-echo "🔧 Fixing Capacitor core manifests..."
-find ../node_modules/@capacitor -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
-    echo "📄 Fixing Capacitor core: $manifest"
-    sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
-    sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
-    if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
-        sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
-    fi
-done
-
-# Fix specific plugin manifests that appear in the error
-echo "🔧 Fixing specific plugin manifests..."
-PLUGIN_PATHS=(
-    "../node_modules/@capacitor-community/admob"
-    "../node_modules/@capacitor/camera"
-    "../node_modules/@codetrix-studio/capacitor-google-auth"
-    "../node_modules/@capacitor/filesystem"
+# 8. Target specific problematic plugins from the error log
+echo "🔧 Phase 4: Targeting specific problematic plugins..."
+PROBLEM_PLUGINS=(
+    "@capacitor/android"
+    "@capacitor-community/admob" 
+    "@capacitor/camera"
+    "@codetrix-studio/capacitor-google-auth"
+    "@capacitor/filesystem"
+    "capacitor-cordova-android-plugins"
 )
 
-for plugin_path in "${PLUGIN_PATHS[@]}"; do
-    if [ -d "$plugin_path" ]; then
-        find "$plugin_path" -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
-            echo "📄 Fixing specific plugin: $manifest"
-            sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
-            sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
-            if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
-                sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
-            fi
-        done
-    fi
+for plugin in "${PROBLEM_PLUGINS[@]}"; do
+    echo "🎯 Targeting plugin: $plugin"
+    find ../node_modules -path "*$plugin*" -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
+        echo "📄 Fixing problematic plugin: $manifest"
+        sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+        sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true
+        sed -i 's/package=[^[:space:]]*//g' "$manifest" 2>/dev/null || true
+        if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
+            sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
+        fi
+        
+        # Show what we fixed
+        echo "   📋 First 3 lines after fix:"
+        head -3 "$manifest" | sed 's/^/     /' 2>/dev/null || true
+    done
 done
 
-# Fix ALL node_modules manifests as fallback
-echo "🔧 Fixing all remaining node_modules manifests..."
+# 9. Final comprehensive sweep of ALL node_modules
+echo "🔧 Phase 5: Final comprehensive node_modules sweep..."
 find ../node_modules -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
-    sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
-    sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
+    # Apply all fixes one more time
+    sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+    sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true  
+    sed -i 's/package=[^[:space:]]*//g' "$manifest" 2>/dev/null || true
     if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
         sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
     fi
 done
 
-# 6. Validate all manifests
-echo "🔍 Validating all manifests..."
-./validate-manifests.sh || echo "⚠️ Some validation warnings found but continuing..."
+# 10. Validation with detailed output
+echo "🔍 Phase 6: Comprehensive validation..."
+echo "Checking project manifests..."
+PROJECT_ISSUES=0
+find . -name "AndroidManifest.xml" -type f | while read manifest; do
+    if grep -q "package=" "$manifest" 2>/dev/null; then
+        echo "❌ PROJECT ISSUE: $manifest still has package attribute"
+        echo "   Line: $(grep -n "package=" "$manifest" 2>/dev/null)"
+        PROJECT_ISSUES=$((PROJECT_ISSUES + 1))
+    fi
+done
 
-# 7. Final Gradle cleanup
-echo "🧹 Final Gradle cleanup..."
+echo "Checking critical plugin manifests..."
+PLUGIN_ISSUES=0
+for plugin in "${PROBLEM_PLUGINS[@]}"; do
+    find ../node_modules -path "*$plugin*" -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
+        if grep -q "package=" "$manifest" 2>/dev/null; then
+            echo "❌ PLUGIN ISSUE: $manifest still has package attribute"
+            echo "   Line: $(grep -n "package=" "$manifest" 2>/dev/null)"
+            PLUGIN_ISSUES=$((PLUGIN_ISSUES + 1))
+        fi
+    done
+done
+
+# 11. Final Gradle preparation
+echo "🔧 Phase 7: Final Gradle preparation..."
 ./gradlew clean --no-daemon || true
-
-# 8. Refresh dependencies
-echo "🔄 Refreshing dependencies..."
 ./gradlew --refresh-dependencies --no-daemon || true
 
-# 9. Final validation
-echo "🔍 Final comprehensive validation..."
-echo "Checking for any remaining package attributes in project..."
-PROJECT_PACKAGES=$(find . -name "AndroidManifest.xml" -exec grep -l "package=" {} \; 2>/dev/null || true)
-if [ -n "$PROJECT_PACKAGES" ]; then
-    echo "❌ Still found package attributes in project:"
-    echo "$PROJECT_PACKAGES"
-    # Show the actual lines
-    find . -name "AndroidManifest.xml" -exec grep -n "package=" {} + 2>/dev/null || true
-else
-    echo "✅ No package attributes found in project"
-fi
-
 echo ""
-echo "✅ All build issues have been addressed!"
+echo "✅ ENHANCED BUILD FIX COMPLETED!"
 echo "🚀 Ready to build with: ./gradlew assembleDebug --stacktrace"
-echo "Or use the 'Build Android APK' workflow in Replit"
+echo "📊 If build still fails, run: ./gradlew assembleDebug --debug --stacktrace"
+echo ""
