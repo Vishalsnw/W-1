@@ -1,3 +1,4 @@
+
 name: Build Android APK
 
 on:
@@ -100,27 +101,33 @@ jobs:
             fi
           done
 
-          echo "🔧 Cleaning AndroidManifest.xml files..."
-          find node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" | while read manifest; do
-            sed -i 's/ package="[^"]*"//g' "$manifest"
-            sed -i 's/package="[^"]*" //g' "$manifest"
-            sed -i 's/<manifest.*/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/' "$manifest"
+      - name: Fix All AndroidManifest.xml Files
+        run: |
+          echo "🔧 Running comprehensive manifest fix..."
+          cd android
+          chmod +x fix-all-build-issues.sh
+          ./fix-all-build-issues.sh
+          
+          echo "🔧 Additional manifest cleanup in node_modules..."
+          find ../node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" 2>/dev/null | while read manifest; do
+            echo "📄 Fixing: $manifest"
+            sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
+            sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
+            if ! grep -q "xmlns:android=" "$manifest" 2>/dev/null; then
+              sed -i 's/<manifest/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android"/g' "$manifest" 2>/dev/null || true
+            fi
           done
 
       - name: Force Install AndroidX Activity & Firebase
         run: |
           echo "🔧 Adding AndroidX Activity dependency..."
-          sed -i '/dependencies {/a \    implementation "androidx.activity:activity:1.7.2"\n    implementation "androidx.activity:activity-ktx:1.7.2"' android/app/build.gradle
+          if ! grep -q "androidx.activity:activity" android/app/build.gradle; then
+            sed -i '/dependencies {/a \    implementation "androidx.activity:activity:1.7.2"\n    implementation "androidx.activity:activity-ktx:1.7.2"' android/app/build.gradle
+          fi
 
           echo "🔧 Adding Firebase Crashlytics dependencies..."
-          sed -i '/dependencies {/a \    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-crashlytics"\n    implementation "com.google.firebase:firebase-analytics"' android/app/build.gradle
-
-      - name: Fix Google Services Configuration
-        run: |
-          echo "🔧 Ensuring proper google-services.json structure..."
-          if [ ! -f "android/app/google-services.json" ]; then
-            echo "⚠️ google-services.json not found! Creating placeholder..."
-            cp android/app/google-services.json android/app/google-services.json.backup 2>/dev/null || true
+          if ! grep -q "firebase-bom" android/app/build.gradle; then
+            sed -i '/dependencies {/a \    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-crashlytics"\n    implementation "com.google.firebase:firebase-analytics"' android/app/build.gradle
           fi
 
       - name: Create Debug Keystore & Get SHA1
@@ -134,54 +141,6 @@ jobs:
           echo "📋 SHA1 Fingerprint for Firebase Console:"
           keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA1 | head -1
 
-      - name: Fix Plugin Build Issues
-        run: |
-          echo "🔧 Fixing plugin build.gradle files..."
-
-          # Fix Google Auth plugin specifically
-          GOOGLE_AUTH_GRADLE="node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
-          if [ -f "$GOOGLE_AUTH_GRADLE" ]; then
-            echo "Fixing Google Auth plugin gradle..."
-            sed -i 's/jcenter()/mavenCentral()/' "$GOOGLE_AUTH_GRADLE"
-            if ! grep -q "namespace" "$GOOGLE_AUTH_GRADLE"; then
-              sed -i "/android {/a \    namespace \"com.codetrixstudio.capacitor.GoogleAuth\"" "$GOOGLE_AUTH_GRADLE"
-            fi
-          fi
-
-          # Fix AdMob plugin
-          ADMOB_GRADLE="node_modules/@capacitor-community/admob/android/build.gradle"
-          if [ -f "$ADMOB_GRADLE" ]; then
-            echo "Fixing AdMob plugin gradle..."
-            sed -i 's/jcenter()/mavenCentral()/' "$ADMOB_GRADLE"
-            if ! grep -q "namespace" "$ADMOB_GRADLE"; then
-              sed -i "/android {/a \    namespace \"com.getcapacitor.community.admob\"" "$ADMOB_GRADLE"
-            fi
-          fi
-
-          # Fix Crashlytics plugin
-          CRASHLYTICS_GRADLE="node_modules/@capacitor-firebase/crashlytics/android/build.gradle"
-          if [ -f "$CRASHLYTICS_GRADLE" ]; then
-            echo "Fixing Crashlytics plugin gradle..."
-            sed -i 's/jcenter()/mavenCentral()/' "$CRASHLYTICS_GRADLE"
-            if ! grep -q "namespace" "$CRASHLYTICS_GRADLE"; then
-              sed -i "/android {/a \    namespace \"io.capawesome.capacitorjs.plugins.firebase.crashlytics\"" "$CRASHLYTICS_GRADLE"
-            fi
-          fi
-
-      - name: Run Build Scripts
-        run: |
-          cd android
-          chmod +x *.sh
-
-          echo "🔧 Running fix-debug-dirs script..."
-          ./fix-debug-dirs.sh || true
-
-          echo "🔍 Validating manifests..."
-          ./validate-manifests.sh || true
-
-          echo "🔧 Running fix-build-issues script..."
-          ./fix-build-issues.sh || true
-
       - name: Setup Gradle Wrapper
         run: |
           cd android
@@ -193,30 +152,49 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
-      - name: Pre-Build Validation
+      - name: Final Validation Before Build
         run: |
-          echo "🔍 Pre-build validation..."
+          echo "🔍 Final validation before build..."
           cd android
 
-          echo "Checking for package attributes in manifests..."
-          find . -name "AndroidManifest.xml" -exec grep -l "package=" {} \; || echo "✅ No package attributes found"
+          echo "Checking for any remaining package attributes..."
+          REMAINING_PACKAGES=$(find . -name "AndroidManifest.xml" -exec grep -l "package=" {} \; 2>/dev/null || true)
+          if [ -n "$REMAINING_PACKAGES" ]; then
+            echo "❌ Still found package attributes in:"
+            echo "$REMAINING_PACKAGES"
+            exit 1
+          else
+            echo "✅ No package attributes found in project manifests"
+          fi
 
-          echo "Checking gradle files..."
-          ls -la app/build.gradle build.gradle
+          echo "Checking plugin manifests..."
+          PLUGIN_PACKAGES=$(find ../node_modules -name "AndroidManifest.xml" -path "*/android/src/main/*" -exec grep -l "package=" {} \; 2>/dev/null || true)
+          if [ -n "$PLUGIN_PACKAGES" ]; then
+            echo "❌ Still found package attributes in plugin manifests:"
+            echo "$PLUGIN_PACKAGES"
+            exit 1
+          else
+            echo "✅ No package attributes found in plugin manifests"
+          fi
 
           echo "Checking google-services.json..."
           if [ -f "app/google-services.json" ]; then
             echo "✅ google-services.json exists"
-            head -5 app/google-services.json
           else
             echo "❌ google-services.json missing"
+            exit 1
           fi
 
-      - name: Build Debug APK (summarized logs)
+      - name: Build Debug APK
         run: |
           cd android
-          echo "🔨 Building APK..."
-          ./gradlew clean assembleDebug --stacktrace --no-daemon > build-output.log 2>&1
+          echo "🔨 Building APK with clean build..."
+          
+          # Clean everything first
+          ./gradlew clean --no-daemon --stacktrace
+          
+          # Build with detailed logging but capture output
+          ./gradlew assembleDebug --no-daemon --stacktrace --info > build-output.log 2>&1
           BUILD_EXIT_CODE=$?
 
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
@@ -225,23 +203,29 @@ jobs:
             echo "========================================="
             echo "📌 ERROR SUMMARY"
             echo "========================================="
-            grep -i -E "AndroidManifest\.xml|manifest.*error|namespace.*error|Compilation failed|cannot find symbol|error:|could not resolve|dependency.*failed|not found|> Task.*FAILED|Execution failed for task" build-output.log | uniq || true
+            # Show most relevant errors
+            grep -i -E "AndroidManifest\.xml|manifest.*error|namespace.*error|Compilation failed|cannot find symbol|error:|could not resolve|dependency.*failed|not found|> Task.*FAILED|Execution failed for task|FAILURE:" build-output.log | head -20 || true
             echo "========================================="
+            echo ""
+            echo "📋 Full error context:"
+            tail -50 build-output.log
             exit 1
           else
             echo "✅ BUILD SUCCESS"
+            ls -la app/build/outputs/apk/debug/
           fi
         env:
-          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false"
+          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g"
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: whatsorder-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Upload Full Gradle Logs
+      - name: Upload Build Logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
