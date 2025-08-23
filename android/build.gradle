@@ -21,10 +21,8 @@ subprojects {
         if (sub.plugins.hasPlugin('com.android.application') || sub.plugins.hasPlugin('com.android.library')) {
             // Configure Android-specific settings
             sub.android {
-                // Ensure compileSdkVersion is at least 30 for Java 9+ compatibility
-                if (sub.android.compileSdkVersion < 30) {
-                    sub.android.compileSdkVersion = 34 // Use a higher version for better compatibility
-                }
+                // Ensure compileSdk is properly set for compatibility
+                compileSdk 34
                 
                 compileOptions {
                     sourceCompatibility JavaVersion.VERSION_17
