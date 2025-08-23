@@ -25,6 +25,12 @@ const config: CapacitorConfig = {
       appId: 'ca-app-pub-5538218540896625~5131951256',
       testingDevices: [],
       initializeForTesting: false
+    },
+    FirebaseCrashlytics: {
+      enabled: true,
+      javascript: {
+        enabled: true
+      }
     }
   }
 };

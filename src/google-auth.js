@@ -2,6 +2,7 @@
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { initializeCrashlytics, logEvent, recordException, setUserId } from './crashlytics.js';
 
 // Initialize Google Auth
 GoogleAuth.initialize({
@@ -10,16 +11,27 @@ GoogleAuth.initialize({
   grantOfflineAccess: true,
 });
 
+// Initialize Crashlytics
+initializeCrashlytics();
+
 // Google Sign In function
 export async function signInWithGoogle() {
   try {
+    await logEvent('Attempting Google Sign In');
     const result = await GoogleAuth.signIn();
     console.log('Google Sign In Success:', result);
     
-    // You can now use result.authentication.idToken for Firebase auth
+    // Set user ID for Crashlytics
+    if (result.authentication && result.authentication.accessToken) {
+      await setUserId(result.authentication.accessToken.substring(0, 10));
+    }
+    
+    await logEvent('Google Sign In Success');
     return result;
   } catch (error) {
     console.error('Google Sign In Error:', error);
+    await recordException(error);
+    await logEvent('Google Sign In Failed: ' + error.message);
     throw error;
   }
 }
@@ -38,6 +50,7 @@ export async function signOutFromGoogle() {
 // Camera/File Upload functions
 export async function takePicture() {
   try {
+    await logEvent('Attempting to take picture');
     const image = await Camera.getPhoto({
       quality: 90,
       allowEditing: true,
@@ -45,9 +58,12 @@ export async function takePicture() {
       source: CameraSource.Camera
     });
     
+    await logEvent('Picture taken successfully');
     return image.dataUrl;
   } catch (error) {
     console.error('Camera Error:', error);
+    await recordException(error);
+    await logEvent('Camera failed: ' + error.message);
     throw error;
   }
 }
