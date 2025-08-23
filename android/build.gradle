@@ -15,18 +15,40 @@ subprojects {
         maven { url = uri("https://jitpack.io") }
     }
 
-    // ✅ Force Java 17 + Kotlin JVM target for all subprojects
+    // ✅ Updated to support Java 21 + Kotlin JVM target consistency
     afterEvaluate { sub ->
-        // Java
-        tasks.withType(JavaCompile).configureEach {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-            options.release = 17
+        // Only apply if this is an Android project
+        if (sub.plugins.hasPlugin('com.android.application') || sub.plugins.hasPlugin('com.android.library')) {
+            // Configure Android-specific settings
+            sub.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_21
+                    targetCompatibility JavaVersion.VERSION_21
+                }
+                
+                // For Kotlin projects, set JVM target to match Java
+                if (sub.plugins.hasPlugin('org.jetbrains.kotlin.android')) {
+                    kotlinOptions {
+                        jvmTarget = "21"
+                        freeCompilerArgs += [
+                            "-Xjvm-default=all",
+                            "-Xbackend-threads=0"
+                        ]
+                    }
+                }
+            }
         }
-        // Kotlin
+        
+        // Configure Java compilation for all projects
+        tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+        }
+        
+        // Configure Kotlin compilation for all projects
         tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
             kotlinOptions {
-                jvmTarget = "17"
+                jvmTarget = "21"
                 freeCompilerArgs += [
                     "-Xjvm-default=all",
                     "-Xbackend-threads=0"
