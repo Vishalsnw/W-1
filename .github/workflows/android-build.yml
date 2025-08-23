@@ -59,7 +59,7 @@ jobs:
         run: |
           echo "kotlin.code.style=official" >> android/gradle.properties
           echo "kotlin.version=1.9.22" >> android/gradle.properties
-          
+
           echo "🔧 Adding Firebase plugins to root build.gradle..."
           if ! grep -q "google-services" android/build.gradle; then
             sed -i '/classpath.*gradle/a \        classpath "com.google.gms:google-services:4.4.0"\n        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"' android/build.gradle
@@ -73,7 +73,7 @@ jobs:
           if ! grep -q "com.google.firebase.crashlytics" android/app/build.gradle; then
             sed -i '/apply plugin: "com.android.application"/a apply plugin: "com.google.gms.google-services"\napply plugin: "com.google.firebase.crashlytics"' android/app/build.gradle
           fi
-          
+
           echo "🔧 Patching plugin build.gradle files..."
           find node_modules -name "build.gradle" -path "*/android/*" | while read gradle_file; do
             sed -i 's/jcenter()/mavenCentral()/' "$gradle_file"
@@ -111,7 +111,7 @@ jobs:
         run: |
           echo "🔧 Adding AndroidX Activity dependency..."
           sed -i '/dependencies {/a \    implementation "androidx.activity:activity:1.7.2"\n    implementation "androidx.activity:activity-ktx:1.7.2"' android/app/build.gradle
-          
+
           echo "🔧 Adding Firebase Crashlytics dependencies..."
           sed -i '/dependencies {/a \    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-crashlytics"\n    implementation "com.google.firebase:firebase-analytics"' android/app/build.gradle
 
@@ -130,41 +130,41 @@ jobs:
           if [ ! -f ~/.android/debug.keystore ]; then
             keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-          
+
           echo "📋 SHA1 Fingerprint for Firebase Console:"
           keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA1 | head -1
 
       - name: Fix Plugin Build Issues
         run: |
           echo "🔧 Fixing plugin build.gradle files..."
-          
+
           # Fix Google Auth plugin specifically
           GOOGLE_AUTH_GRADLE="node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
           if [ -f "$GOOGLE_AUTH_GRADLE" ]; then
             echo "Fixing Google Auth plugin gradle..."
             sed -i 's/jcenter()/mavenCentral()/' "$GOOGLE_AUTH_GRADLE"
             if ! grep -q "namespace" "$GOOGLE_AUTH_GRADLE"; then
-              sed -i '/android {/a \    namespace "com.codetrixstudio.capacitor.GoogleAuth"' "$GOOGLE_AUTH_GRADLE"
+              sed -i "/android {/a \    namespace \"com.codetrixstudio.capacitor.GoogleAuth\"" "$GOOGLE_AUTH_GRADLE"
             fi
           fi
-          
+
           # Fix AdMob plugin
           ADMOB_GRADLE="node_modules/@capacitor-community/admob/android/build.gradle"
           if [ -f "$ADMOB_GRADLE" ]; then
             echo "Fixing AdMob plugin gradle..."
             sed -i 's/jcenter()/mavenCentral()/' "$ADMOB_GRADLE"
             if ! grep -q "namespace" "$ADMOB_GRADLE"; then
-              sed -i '/android {/a \    namespace "com.getcapacitor.community.admob"' "$ADMOB_GRADLE"
+              sed -i "/android {/a \    namespace \"com.getcapacitor.community.admob\"" "$ADMOB_GRADLE"
             fi
           fi
-          
+
           # Fix Crashlytics plugin
           CRASHLYTICS_GRADLE="node_modules/@capacitor-firebase/crashlytics/android/build.gradle"
           if [ -f "$CRASHLYTICS_GRADLE" ]; then
             echo "Fixing Crashlytics plugin gradle..."
             sed -i 's/jcenter()/mavenCentral()/' "$CRASHLYTICS_GRADLE"
             if ! grep -q "namespace" "$CRASHLYTICS_GRADLE"; then
-              sed -i '/android {/a \    namespace "io.capawesome.capacitorjs.plugins.firebase.crashlytics"' "$CRASHLYTICS_GRADLE"
+              sed -i "/android {/a \    namespace \"io.capawesome.capacitorjs.plugins.firebase.crashlytics\"" "$CRASHLYTICS_GRADLE"
             fi
           fi
 
@@ -172,13 +172,13 @@ jobs:
         run: |
           cd android
           chmod +x *.sh
-          
+
           echo "🔧 Running fix-debug-dirs script..."
           ./fix-debug-dirs.sh || true
-          
+
           echo "🔍 Validating manifests..."
           ./validate-manifests.sh || true
-          
+
           echo "🔧 Running fix-build-issues script..."
           ./fix-build-issues.sh || true
 
@@ -197,13 +197,13 @@ jobs:
         run: |
           echo "🔍 Pre-build validation..."
           cd android
-          
+
           echo "Checking for package attributes in manifests..."
           find . -name "AndroidManifest.xml" -exec grep -l "package=" {} \; || echo "✅ No package attributes found"
-          
+
           echo "Checking gradle files..."
           ls -la app/build.gradle build.gradle
-          
+
           echo "Checking google-services.json..."
           if [ -f "app/google-services.json" ]; then
             echo "✅ google-services.json exists"
@@ -218,7 +218,7 @@ jobs:
           echo "🔨 Building APK..."
           ./gradlew clean assembleDebug --stacktrace --no-daemon > build-output.log 2>&1
           BUILD_EXIT_CODE=$?
-          
+
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "❌ BUILD FAILED"
             echo ""

@@ -56,3 +56,32 @@ if [ -d "../node_modules" ]; then
 fi
 
 echo "✅ Debug directories check complete"plete!"
+#!/bin/bash
+echo "🔧 Fixing debug source directories..."
+echo "====================================="
+
+# Ensure proper debug source directories exist
+modules=("app" "capacitor-cordova-android-plugins")
+
+for module in "${modules[@]}"; do
+    if [ -d "$module" ]; then
+        echo "📁 Processing module: $module"
+        
+        # Create debug directories if missing
+        mkdir -p "$module/src/debug/java"
+        mkdir -p "$module/src/debug/res"
+        mkdir -p "$module/src/debug/assets"
+        
+        # Create empty .gitkeep files
+        touch "$module/src/debug/java/.gitkeep"
+        touch "$module/src/debug/res/.gitkeep" 
+        touch "$module/src/debug/assets/.gitkeep"
+        
+        echo "  ✅ Debug directories created"
+    else
+        echo "  ⚠️  Module $module not found, skipping"
+    fi
+done
+
+echo ""
+echo "✅ Debug directory fix completed"

@@ -20,6 +20,11 @@ rm -rf build
 echo "🔧 Fixing debug source directories..."
 ./fix-debug-dirs.sh
 
+# Fix manifests first
+echo "🔧 Fixing manifests..."
+chmod +x fix-manifests.sh
+./fix-manifests.sh
+
 # Validate manifests
 echo "🔍 Validating manifests..."
 ./validate-manifests.sh
