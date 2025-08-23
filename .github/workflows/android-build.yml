@@ -113,10 +113,14 @@ jobs:
       - name: Setup Gradle Wrapper
         run: |
           cd android
-          if [ ! -f gradlew ]; then
-            echo "Generating Gradle wrapper with compatible version..."
-            gradle wrapper --gradle-version 8.4 --distribution-type all
-          fi
+          
+          # Force correct Gradle version in wrapper properties
+          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.4-all.zip" >> gradle/wrapper/gradle-wrapper.properties
+          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
+          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+          
           chmod +x gradlew
 
           # Verify Gradle wrapper properties
