@@ -29,22 +29,31 @@ android {
         }
     }
 
+    // ✅ Ensure Java 17 compatibility
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    // ✅ Ensure Kotlin targets Java 17
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += [
+            "-Xjvm-default=all",
+            "-Xbackend-threads=0"
+        ]
     }
 
+    // ✅ Prevent duplicate META-INF conflicts
     packagingOptions {
         resources {
             excludes += [
-                "META-INF/LICENSE.txt",
-                "META-INF/NOTICE.txt",
-                "META-INF/LICENSE",
-                "META-INF/NOTICE"
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/DEPENDENCIES",
+                "META-INF/ASL2.0",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1"
             ]
         }
     }
@@ -59,20 +68,18 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    // Firebase
+    // Firebase (BOM keeps versions aligned)
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
 
-    // Capacitor core module
+    // Capacitor core + plugins
     implementation project(":capacitor-android")
-
-    // Capacitor community / plugins
-    implementation project(':capacitor-community-admob')
-    implementation project(':capacitor-camera')
-    implementation project(':capacitor-filesystem')
-    implementation project(':codetrix-studio-capacitor-google-auth')
+    implementation project(":capacitor-community-admob")
+    implementation project(":capacitor-camera")
+    implementation project(":capacitor-filesystem")
+    implementation project(":codetrix-studio-capacitor-google-auth")
 
     // Testing
     testImplementation 'junit:junit:4.13.2'
