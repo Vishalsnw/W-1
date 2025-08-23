@@ -54,6 +54,11 @@ jobs:
           npm install @capacitor-community/admob@7.0.3 @capacitor/camera@5.0.10 @capacitor/filesystem@5.2.2
           npm install @codetrix-studio/capacitor-google-auth@1.5.1
 
+      - name: Force Kotlin Version
+        run: |
+          echo "kotlin.code.style=official" >> android/gradle.properties
+          echo "kotlin.version=1.9.22" >> android/gradle.properties
+
       - name: Sync Capacitor & Patch Plugins
         run: |
           npx cap sync android
