@@ -24,13 +24,15 @@ echo "🔧 Fixing debug source directories..."
 echo "🔍 Validating manifests..."
 ./validate-manifests.sh
 
-# Clean Gradle cache
+# Clean Gradle cache thoroughly  
 echo "🧹 Cleaning Gradle cache..."
-./gradlew clean --no-daemon
+rm -rf ~/.gradle/caches/
+rm -rf .gradle/
+./gradlew clean --no-daemon --refresh-dependencies
 
-# Sync Gradle
+# Force dependency refresh
 echo "🔄 Syncing Gradle dependencies..."
-./gradlew --refresh-dependencies --no-daemon
+./gradlew --refresh-dependencies --no-daemon --recompile-scripts
 
 echo "✅ Build fix script completed!"
 echo "Now try building with: ./gradlew assembleDebug --no-daemon"
