@@ -17,11 +17,12 @@ apply plugin: 'com.android.library'
 
 android {
     namespace "capacitor.cordova.android.plugins"
-    compileSdk cdvCompileSdkVersion // Use the variable from cordova.variables.gradle
+    // Convert to integer if it's a string like "android-34"
+    compileSdk getCompileSdkVersion()
     
     defaultConfig {
-        minSdk cdvMinSdkVersion // Use the variable from cordova.variables.gradle
-        targetSdk cdvTargetSdkVersion // Use the variable from cordova.variables.gradle
+        minSdk cdvMinSdkVersion
+        targetSdk cdvTargetSdkVersion
         versionCode 1
         versionName "1.0"
     }
@@ -38,6 +39,15 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+// Helper method to handle both string and integer compileSdk versions
+def getCompileSdkVersion() {
+    def version = cdvCompileSdkVersion
+    if (version instanceof String && version.startsWith('android-')) {
+        return Integer.parseInt(version.substring(8))
+    }
+    return version
 }
 
 repositories {
