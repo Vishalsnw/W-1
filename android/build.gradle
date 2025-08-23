@@ -6,7 +6,7 @@ plugins {
     id 'com.google.gms.google-services' version '4.4.0' apply false
 }
 
-// ✅ Override subprojects to use correct repositories
+// ✅ Repositories for all subprojects
 subprojects {
     repositories {
         google()
@@ -14,25 +14,32 @@ subprojects {
         gradlePluginPortal()
         maven { url = uri("https://jitpack.io") }
     }
-}
 
-// ✅ Force Java 17 for capacitor-community-admob
-subprojects { sub ->
-    if (sub.name == "capacitor-community-admob") {
-        afterEvaluate {
-            // Java sources
-            tasks.withType(JavaCompile).configureEach {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
-                options.release = 17
-            }
-            // Kotlin sources
-            tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                kotlinOptions {
-                    jvmTarget = "17"
-                }
+    // ✅ Force Java 17 + Kotlin JVM target for all subprojects
+    afterEvaluate { sub ->
+        // Java
+        tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+            options.release = 17
+        }
+        // Kotlin
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "17"
+                freeCompilerArgs += [
+                    "-Xjvm-default=all",
+                    "-Xbackend-threads=0"
+                ]
             }
         }
+    }
+}
+
+// ✅ Global Java toolchain (in case Gradle ignores local config)
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
