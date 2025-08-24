@@ -1,0 +1,94 @@
+Skip to content
+Navigation Menu
+Vishalsnw
+W-1
+
+Code
+Issues
+Pull requests
+Build Android APK
+Assistant checkpoint: Update Java version to 21 for plugin compatibility #228
+Annotations
+1 error and 3 warnings
+build
+failed now in 5m 35s
+4s
+0s
+6s
+1s
+23s
+38s
+7s
+0s
+2m 59s
+1s
+1s
+5s
+1m 5s
+Run cd android
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.4/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+FAILURE: Build completed with 3 failures.
+
+1: Task failed with an exception.
+-----------
+* Where:
+Build file '/home/runner/work/W-1/W-1/android/app/build.gradle' line: 41
+
+* What went wrong:
+A problem occurred evaluating project ':app'.
+> Unknown Kotlin JVM target: 21
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* Where:
+Build file '/home/runner/work/W-1/W-1/android/build.gradle' line: 37
+
+* What went wrong:
+A problem occurred configuring project ':app'.
+> Unknown Kotlin JVM target: 21
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+3: Task failed with an exception.
+-----------
+* Where:
+Build file '/home/runner/work/W-1/W-1/android/build.gradle' line: 37
+
+* What went wrong:
+Failed to query the value of property 'buildFlowServiceProperty'.
+> Could not isolate value org.jetbrains.kotlin.gradle.plugin.statistics.BuildFlowService$Parameters_Decorated@3d1a402a of type BuildFlowService.Parameters
+   > A problem occurred configuring project ':app'.
+      > Unknown Kotlin JVM target: 21
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+BUILD FAILED in 1m 3s
+Error: Process completed with exit code 1.
+0s
+0s
+0s
+0s
+0s
+0s
+0s
+0s
+0s
