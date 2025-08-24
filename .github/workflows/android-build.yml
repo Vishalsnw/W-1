@@ -35,6 +35,11 @@ jobs:
           build-tools: 34.0.0
           ndk-version: 25.1.8937393
 
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 8.4
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -63,12 +68,25 @@ jobs:
         run: |
           cd android
           echo "🔧 Setting up Gradle wrapper..."
-          chmod +x gradlew || true
+          
+          # Ensure gradle wrapper files exist and are executable
           if [ ! -f "gradlew" ]; then
             echo "Creating gradlew..."
-            gradle wrapper --gradle-version=8.4 || ./gradlew wrapper --gradle-version=8.4 || true
+            # Use gradle to create wrapper if available, otherwise copy from template
+            if command -v gradle >/dev/null 2>&1; then
+              gradle wrapper --gradle-version=8.4
+            else
+              # Create basic gradlew script if gradle command not available
+              echo "#!/bin/bash" > gradlew
+              echo 'exec "$JAVA_HOME/bin/java" -jar "$(dirname "$0")/gradle/wrapper/gradle-wrapper.jar" "$@"' >> gradlew
+            fi
           fi
-          chmod +x gradlew
+          
+          # Make gradlew executable
+          chmod +x gradlew gradlew.bat
+          
+          # Verify gradlew works
+          ./gradlew --version || echo "Gradlew verification failed but continuing..."
 
       - name: Post-Fix Setup
         run: |
@@ -120,8 +138,16 @@ jobs:
           cd android
           echo "🔨 Starting final build..."
 
+          # Ensure gradlew is executable
+          chmod +x gradlew
+
           # Clean build
-          ./gradlew clean --no-daemon
+          if [ -f "gradlew" ]; then
+            ./gradlew clean --no-daemon
+          else
+            echo "❌ gradlew not found, cannot build"
+            exit 1
+          fi
 
           # Build with detailed output
           ./gradlew assembleDebug --no-daemon --stacktrace > ../build-output.log 2>&1
