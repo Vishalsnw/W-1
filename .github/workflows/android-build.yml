@@ -55,7 +55,6 @@ jobs:
           chmod +x gradlew gradlew.bat
           chmod +x *.sh
 
-          # Ensure gradle wrapper exists and is functional
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             echo "Creating Gradle wrapper..."
             ./gradlew wrapper --gradle-version=8.4 --distribution-type=bin
@@ -66,10 +65,8 @@ jobs:
           cd android
           echo "🔧 Running comprehensive build fixes..."
 
-          # Make all shell scripts executable
           find . -name "*.sh" -exec chmod +x {} \;
 
-          # Run fix scripts if they exist
           if [ -f "./fix-all-build-issues.sh" ]; then
             ./fix-all-build-issues.sh
           else
@@ -82,16 +79,14 @@ jobs:
             echo "⚠️ fix-gradle-issues.sh not found, skipping..."
           fi
 
-          # Create capacitor-cordova-android-plugins if missing
           if [ ! -d "capacitor-cordova-android-plugins" ]; then
             echo "🔧 Creating missing capacitor-cordova-android-plugins directory..."
             mkdir -p capacitor-cordova-android-plugins/src/main/java
             mkdir -p capacitor-cordova-android-plugins/src/main/res
 
-            # Create minimal AndroidManifest.xml
-            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
+            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' \
+              > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
 
-            # Create minimal build.gradle safely (no YAML conflict)
             cat <<'EOF' > capacitor-cordova-android-plugins/build.gradle
 apply plugin: 'com.android.library'
 
