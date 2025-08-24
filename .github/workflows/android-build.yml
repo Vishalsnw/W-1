@@ -47,12 +47,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Install Dependencies
-        run: |
-          npm ci
-          npm install @capacitor/cli@5.7.8 @capacitor/core@5.7.8 @capacitor/android@5.7.8
-          npm install @capacitor-community/admob@7.0.3 @capacitor/camera@5.0.10 @capacitor/filesystem@5.2.2
-          npm install @codetrix-studio/capacitor-google-auth@1.5.1
-          npm install @capacitor-firebase/crashlytics@5.4.1
+        run: npm install
 
       - name: Add Firebase & Force Kotlin
         run: |
