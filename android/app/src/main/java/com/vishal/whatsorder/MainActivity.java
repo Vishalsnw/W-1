@@ -14,10 +14,9 @@ public class MainActivity extends BridgeActivity {
 
         // Initializes the Bridge and plugins to be used locally
         this.init(savedInstanceState, new ArrayList<Class<? extends Plugin>>() {{
-            // Additional plugins you've registered can be added here
             add(GoogleAuth.class);
             add(AdMob.class);
-            // ❌ Removed FirebaseCrashlyticsPlugin — handled by Gradle + Firebase automatically
+            // ✅ Removed FirebaseCrashlyticsPlugin (not needed)
         }});
     }
-            }
+}
