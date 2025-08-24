@@ -4,7 +4,6 @@ import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.community.admob.AdMob;
 import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth;
-import io.capawesome.capacitorjs.plugins.firebase.crashlytics.FirebaseCrashlyticsPlugin;
 import java.util.ArrayList;
 import com.getcapacitor.Plugin;
 
@@ -18,7 +17,7 @@ public class MainActivity extends BridgeActivity {
             // Additional plugins you've registered can be added here
             add(GoogleAuth.class);
             add(AdMob.class);
-            add(FirebaseCrashlyticsPlugin.class);
+            // ❌ Removed FirebaseCrashlyticsPlugin — handled by Gradle + Firebase automatically
         }});
     }
-}
+            }
