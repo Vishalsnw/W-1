@@ -1,0 +1,174 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+          ndk-version: '25.1.8937393'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Setup Gradle Wrapper and Permissions
+        run: |
+          cd android
+          chmod +x gradlew
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            ./gradlew wrapper --gradle-version=8.4 --distribution-type=bin
+          fi
+
+      - name: Fix Build Issues
+        run: |
+          cd android
+          echo "🔧 Running build fixes..."
+
+          find . -name "*.sh" -exec chmod +x {} \;
+
+          if [ -f "./fix-all-build-issues.sh" ]; then
+            ./fix-all-build-issues.sh
+          fi
+
+          if [ -f "./fix-gradle-issues.sh" ]; then
+            ./fix-gradle-issues.sh
+          fi
+
+          if [ ! -d "capacitor-cordova-android-plugins" ]; then
+            mkdir -p capacitor-cordova-android-plugins/src/main/java
+            mkdir -p capacitor-cordova-android-plugins/src/main/res
+            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' \
+              > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
+
+            # Create build.gradle file with proper formatting
+            cat > capacitor-cordova-android-plugins/build.gradle << 'GRADLE_EOF'
+apply plugin: 'com.android.library'
+
+android {
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 22
+        targetSdk 34
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+}
+GRADLE_EOF
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Validate Firebase Configuration
+        run: |
+          cd android
+          if [ -f "./test-firebase.sh" ]; then
+            chmod +x test-firebase.sh
+            ./test-firebase.sh
+          elif [ -f "app/google-services.json" ]; then
+            echo "✅ google-services.json found"
+          else
+            echo "❌ google-services.json missing"
+          fi
+
+      - name: Accept SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Clean Build
+        run: |
+          cd android
+          ./gradlew clean --no-daemon --refresh-dependencies
+
+      - name: Build APK
+        run: |
+          cd android
+          echo "🏗️ Building Android APK..."
+          ./gradlew assembleDebug --no-daemon --stacktrace > ../build-output.log 2>&1
+          BUILD_STATUS=$?
+          if [ $BUILD_STATUS -eq 0 ]; then
+            echo "🎉 BUILD SUCCESS!"
+            ls -la app/build/outputs/apk/debug/
+          else
+            echo "❌ BUILD FAILED"
+            tail -100 ../build-output.log
+            grep -i -E "FAILED|ERROR|Exception|Task.*failed" ../build-output.log | tail -20 || true
+            exit 1
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: whatsorder-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-logs
+          path: build-output.log
+          retention-days: 7
+
+      - name: Upload Gradle Logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: gradle-logs
+          path: |
+            android/.gradle/
+            android/app/build/
+          retention-days: 3
