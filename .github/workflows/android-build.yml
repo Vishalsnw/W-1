@@ -59,12 +59,16 @@ jobs:
             sed -i '/classpath.*gradle/a \        classpath "com.google.gms:google-services:4.4.0"\n        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"' android/build.gradle
           fi
 
-      - name: Run FINAL Comprehensive Fix
-        working-directory: android
+      - name: Setup Gradle Wrapper
         run: |
-          echo "🚀 Running the FINAL comprehensive fix to end this cycle..."
-          chmod +x fix-all-build-issues.sh
-          ./fix-all-build-issues.sh
+          cd android
+          echo "🔧 Setting up Gradle wrapper..."
+          chmod +x gradlew || true
+          if [ ! -f "gradlew" ]; then
+            echo "Creating gradlew..."
+            gradle wrapper --gradle-version=8.4 || ./gradlew wrapper --gradle-version=8.4 || true
+          fi
+          chmod +x gradlew
 
       - name: Post-Fix Setup
         run: |
