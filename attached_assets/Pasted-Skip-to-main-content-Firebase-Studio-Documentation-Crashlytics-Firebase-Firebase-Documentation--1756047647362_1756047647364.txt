@@ -1,0 +1,179 @@
+Skip to main content
+
+Firebase
+
+
+Studio
+
+Documentation
+Crashlytics
+
+Firebase
+Firebase
+Documentation
+Crashlytics
+Run
+Was this helpful?
+
+Send feedback
+Get started with Firebase Crashlytics
+
+bookmark_border
+
+iOS+ Android Android (NDK) Flutter Unity
+
+
+This quickstart describes how to set up Firebase Crashlytics in your app with the Firebase Crashlytics SDK so that you can get comprehensive crash reports in the Firebase console. With Crashlytics for Android, you get reports for crashes, non-fatal errors, and "Application Not Responding" (ANR) errors.
+
+Setting up Crashlytics requires tasks both in the Firebase console and your IDE (like adding a Firebase configuration file and the Crashlytics SDK). To finish setup, you'll need to force a test crash to send your first crash report to Firebase.
+
+Before you begin
+If you haven't already, add Firebase to your Android project. If you don't have an Android app, you can download a sample app.
+
+Recommended: To automatically get breadcrumb logs to understand user actions leading up to a crash, non-fatal, or ANR event, you need to enable Google Analytics in your Firebase project.
+
+If your existing Firebase project doesn't have Google Analytics enabled, you can enable Google Analytics from the Integrations tab of your settings > Project settings in the Firebase console.
+
+If you're creating a new Firebase project, enable Google Analytics during the project creation workflow.
+
+Make sure your app has the following minimum required versions:
+
+Gradle 8.0
+Android Gradle plugin 8.1.0
+Google services Gradle plugin 4.4.1
+Step 1: Add the Crashlytics SDK to your app
+Does your app use NDK? Go to the NDK crash reporting documentation to learn how to configure Crashlytics to report crashes that occur in your app's underlying NDK libraries.
+In your module (app-level) Gradle file (usually <project>/<app-module>/build.gradle.kts or <project>/<app-module>/build.gradle), add the dependency for the Crashlytics NDK library for Android. We recommend using the Firebase Android BoM to control library versioning.
+To take advantage of breadcrumb logs, also add the Firebase SDK for Google Analytics to your app. Make sure that Google Analytics is enabled in your Firebase project.
+
+
+dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
+
+    // Add the dependencies for the Crashlytics NDK and Analytics libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-crashlytics-ndk")
+    implementation("com.google.firebase:firebase-analytics")
+}
+By using the Firebase Android BoM, your app will always use compatible versions of Firebase Android libraries.
+
+(Alternative)  Add Firebase library dependencies without using the BoM
+
+Step 2: Add the Crashlytics Gradle plugin to your app
+In your root-level (project-level) Gradle file (<project>/build.gradle.kts or <project>/build.gradle), add the Crashlytics Gradle plugin to the plugins block:
+
+Kotlin
+Groovy
+Are you still using the buildscript syntax? Learn how to add Firebase plugins using that syntax.
+
+plugins {
+    // Make sure that you have the AGP plugin 8.1+ dependency
+    id 'com.android.application' version '8.1.4' apply false
+    // ...
+
+    // Make sure that you have the Google services Gradle plugin 4.4.1+ dependency
+    id 'com.google.gms.google-services' version '4.4.3' apply false
+
+    // Add the dependency for the Crashlytics Gradle plugin
+    id 'com.google.firebase.crashlytics' version '3.0.6' apply false
+}
+Is your app using a lower version of Gradle? Consider upgrading; otherwise, you should use v2.9.9 of the Crashlytics Gradle plugin.
+In your module (app-level) Gradle file (usually <project>/<app-module>/build.gradle.kts or <project>/<app-module>/build.gradle), add the Crashlytics Gradle plugin:
+
+Kotlin
+Groovy
+
+plugins {
+  id 'com.android.application'
+  // ...
+
+  // Make sure that you have the Google services Gradle plugin
+  id 'com.google.gms.google-services'
+
+  // Add the Crashlytics Gradle plugin
+  id 'com.google.firebase.crashlytics'
+}
+Step 3: Force a test crash to finish setup
+To finish setting up Crashlytics and see initial data in the Crashlytics dashboard of the Firebase console, you need to force a test crash.
+
+Add code to your app that you can use to force a test crash.
+
+You can use the following code in your app's MainActivity to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".
+
+Kotlin
+Java
+
+val crashButton = Button(this)
+crashButton.text = "Test Crash"
+crashButton.setOnClickListener {
+   throw RuntimeException("Test Crash") // Force a crash
+}
+
+addContentView(crashButton, ViewGroup.LayoutParams(
+       ViewGroup.LayoutParams.MATCH_PARENT,
+       ViewGroup.LayoutParams.WRAP_CONTENT))
+Build and run your app.
+
+Force the test crash in order to send your app's first crash report:
+
+Open your app from your test device or emulator.
+
+In your app, press the "Test Crash" button that you added using the code above.
+
+After your app crashes, restart it so that your app can send the crash report to Firebase.
+
+Go to the Crashlytics dashboard of the Firebase console to see your test crash.
+
+If you've refreshed the console and you're still not seeing the test crash after five minutes, enable debug logging to see if your app is sending crash reports.
+
+
+
+And that's it! Crashlytics is now monitoring your app for crashes, non-fatal errors, and ANRs. Visit the Crashlytics dashboard to view and investigate all your reports and statistics.
+
+Next steps
+Customize your crash report setup by adding opt-in reporting, logs, keys, and tracking of non-fatal errors.
+Integrate with Google Play so that you can filter your Android app's crash reports by Google Play track directly in the Crashlytics dashboard. This allows you to better focus your dashboard on specific builds.
+In Android Studio, view and filter Crashlytics data.
+Use the App Quality Insights (AQI) window in Android Studio to view Crashlytics data alongside your code — no need to jump back and forth between the Crashlytics dashboard and the IDE to start debugging top issues.
+Learn how to use the AQI window in the Android Studio documentation.
+We'd love to hear from you! Send us feedback about the AQI window by filing a bug report.
+
+Was this helpful?
+
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the Creative Commons Attribution 4.0 License, and code samples are licensed under the Apache 2.0 License. For details, see the Google Developers Site Policies. Java is a registered trademark of Oracle and/or its affiliates.
+
+Last updated 2025-08-15 UTC.
+
+Learn
+Developer guides
+SDK & API reference
+Samples
+Libraries
+GitHub
+Stay connected
+Check out the blog
+Find us on Reddit
+Follow on X
+Subscribe on YouTube
+Attend an event
+Support
+Contact support
+Stack Overflow
+Slack community
+Google group
+Release notes
+Brand guidelines
+FAQs
+Google Developers
+Android
+Chrome
+Firebase
+Google Cloud Platform
+All products
+Terms
+Privacy
+
+English
+Google Developer Program dialog opened
