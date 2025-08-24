@@ -19,6 +19,92 @@ rm -rf android/capacitor-cordova-android-plugins 2>/dev/null || true
 npx cap sync android --force 2>/dev/null || true
 cd android 2>/dev/null || true
 
+# 2.5. Ensure capacitor-cordova-android-plugins directory exists
+echo "📁 Ensuring capacitor-cordova-android-plugins directory exists..."
+if [ ! -d "capacitor-cordova-android-plugins" ]; then
+    echo "Creating capacitor-cordova-android-plugins directory..."
+    mkdir -p capacitor-cordova-android-plugins/src/main/java
+    mkdir -p capacitor-cordova-android-plugins/src/main/res
+    touch capacitor-cordova-android-plugins/src/main/java/.gitkeep
+    touch capacitor-cordova-android-plugins/src/main/res/.gitkeep
+    
+    # Create basic AndroidManifest.xml
+    cat > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml << 'EOF'
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+</manifest>
+EOF
+    
+    # Create basic build.gradle if it doesn't exist
+    if [ ! -f "capacitor-cordova-android-plugins/build.gradle" ]; then
+        cp ../node_modules/@capacitor/android/capacitor-cordova-android-plugins/build.gradle capacitor-cordova-android-plugins/ 2>/dev/null || true
+        if [ ! -f "capacitor-cordova-android-plugins/build.gradle" ]; then
+            cat > capacitor-cordova-android-plugins/build.gradle << 'EOF'
+ext {
+    androidxAppCompatVersion = project.hasProperty('androidxAppCompatVersion') ? rootProject.ext.androidxAppCompatVersion : '1.6.1'
+    cordovaAndroidVersion = project.hasProperty('cordovaAndroidVersion') ? rootProject.ext.cordovaAndroidVersion : '10.1.1'
+}
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace "capacitor.cordova.android.plugins"
+    compileSdk 34
+    
+    defaultConfig {
+        minSdk 22
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: 'src/main/libs', include: ['*.jar'])
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "org.apache.cordova:framework:$cordovaAndroidVersion"
+}
+EOF
+        fi
+    fi
+    
+    # Create cordova.variables.gradle if it doesn't exist
+    if [ ! -f "capacitor-cordova-android-plugins/cordova.variables.gradle" ]; then
+        cat > capacitor-cordova-android-plugins/cordova.variables.gradle << 'EOF'
+ext {
+    minSdkVersion = 22
+    compileSdkVersion = 34
+    targetSdkVersion = 34
+    androidxAppCompatVersion = '1.6.1'
+    cordovaAndroidVersion = '10.1.1'
+}
+EOF
+    fi
+    
+    echo "✅ capacitor-cordova-android-plugins directory created"
+else
+    echo "✅ capacitor-cordova-android-plugins directory already exists"
+fi
+
 # 3. Target EXACT problematic plugins from build log
 echo "🎯 Phase 3: Fixing EXACT problematic plugins from build log..."
 EXACT_PROBLEM_PLUGINS=(
