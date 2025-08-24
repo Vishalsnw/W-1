@@ -33,7 +33,7 @@ jobs:
         with:
           api-level: 34
           build-tools: 34.0.0
-          ndk-version: 25.1.8937393
+          ndk-version: '25.1.8937393'
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -52,8 +52,7 @@ jobs:
       - name: Setup Gradle Wrapper and Permissions
         run: |
           cd android
-          chmod +x gradlew gradlew.bat
-          chmod +x *.sh
+          chmod +x gradlew
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             ./gradlew wrapper --gradle-version=8.4 --distribution-type=bin
           fi
@@ -79,7 +78,7 @@ jobs:
             echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' \
               > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
 
-            cat <<'EOF' > capacitor-cordova-android-plugins/build.gradle
+            cat << 'EOF' > capacitor-cordova-android-plugins/build.gradle
 apply plugin: 'com.android.library'
 
 android {
@@ -92,8 +91,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 
@@ -124,7 +123,8 @@ EOF
           fi
 
       - name: Accept SDK Licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Clean Build
         run: |
