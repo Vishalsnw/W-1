@@ -59,7 +59,6 @@ jobs:
           echo "kotlin.code.style=official" >> android/gradle.properties
           echo "kotlin.version=1.9.22" >> android/gradle.properties
 
-          # Add Firebase to root build.gradle if missing
           if ! grep -q "google-services" android/build.gradle; then
             sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.4.0"\n        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"' android/build.gradle
           fi
@@ -69,31 +68,35 @@ jobs:
           cd android
           echo "🔧 Setting up Gradle wrapper..."
           
-          # Ensure gradlew is executable (fix permission issues)
+          mkdir -p gradle/wrapper
+          
+          # Force download fresh gradle-wrapper.jar
+          echo "⬇️ Downloading fresh gradle-wrapper.jar"
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+          
+          # Verify jar size
+          FILE_SIZE=$(wc -c < gradle/wrapper/gradle-wrapper.jar)
+          if [ "$FILE_SIZE" -lt 10000 ]; then
+            echo "❌ gradle-wrapper.jar seems corrupted (too small: $FILE_SIZE bytes)"
+            exit 1
+          fi
+          echo "✅ gradle-wrapper.jar downloaded ($FILE_SIZE bytes)"
+          
+          # Fix execute permissions
           chmod +x gradlew gradlew.bat || true
           
-          # Remove old jar
-          rm -f gradle/wrapper/gradle-wrapper.jar
+          # Generate wrapper files if missing
+          ./gradlew wrapper --gradle-version 8.4 --distribution-type all || true
           
-          # Regenerate wrapper with Gradle 8.4
-          ./gradlew wrapper --gradle-version 8.4 --distribution-type all
-          
-          # Fix execute permissions again (new gradlew may be generated)
           chmod +x gradlew gradlew.bat
-          
-          # Verify gradlew works
           ./gradlew --version || echo "Gradlew verification failed but continuing..."
 
       - name: Post-Fix Setup
         run: |
           npx cap sync android
-
-          # Add Firebase plugins to app build.gradle
           if ! grep -q "com.google.gms.google-services" android/app/build.gradle; then
             sed -i '/plugins {/a \    id "com.google.gms.google-services"\n    id "com.google.firebase.crashlytics"' android/app/build.gradle
           fi
-
-          # Add required dependencies
           if ! grep -q "firebase-crashlytics" android/app/build.gradle; then
             sed -i '/dependencies {/a \    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-crashlytics"\n    implementation "com.google.firebase:firebase-analytics"\n    implementation "androidx.activity:activity:1.7.2"\n    implementation "androidx.activity:activity-ktx:1.7.2"' android/app/build.gradle
           fi
@@ -101,7 +104,6 @@ jobs:
       - name: Final Pre-Build Check
         run: |
           cd android
-          echo "🔍 Final verification..."
           if [ ! -d "capacitor-cordova-android-plugins" ]; then
             echo "❌ capacitor-cordova-android-plugins missing"
             exit 1
