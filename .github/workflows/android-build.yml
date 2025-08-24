@@ -105,37 +105,56 @@ jobs:
         run: |
           chmod +x *.sh
 
-          echo "🔧 Running comprehensive build fixes..."
+          echo "🔧 Running COMPREHENSIVE build fixes..."
           chmod +x fix-all-build-issues.sh
           ./fix-all-build-issues.sh
 
-          echo "🔍 Running enhanced validation..."
-          ./validate-manifests.sh || echo "⚠️ Validation completed with warnings"
-
-          echo "🔧 Final safety checks and cleanup..."
-          # List all manifests first
-          echo "📄 All AndroidManifest.xml files found:"
+          echo "🔧 Post-fix verification and emergency cleanup..."
+          
+          # Emergency cleanup for any remaining package attributes
+          echo "🚨 Emergency cleanup of any remaining package attributes..."
           find . -name "AndroidManifest.xml" -type f | while read manifest; do
-            echo "  - $manifest"
             if grep -q "package=" "$manifest" 2>/dev/null; then
-              echo "    ⚠️ Contains package attribute - fixing..."
-              sed -i 's/ package="[^"]*"//g' "$manifest" 2>/dev/null || true
-              sed -i 's/package="[^"]*" //g' "$manifest" 2>/dev/null || true
-            else
-              echo "    ✅ Clean"
+              echo "🔧 Emergency fixing: $manifest"
+              # Multiple approaches to remove package attributes
+              sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+              sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true
+              sed -i 's/package=[^[:space:]">]*//g' "$manifest" 2>/dev/null || true
+              sed -i 's/<manifest[[:space:]]*package="[^"]*"/<manifest/g' "$manifest" 2>/dev/null || true
+              sed -i 's/[[:space:]]*package[[:space:]]*=[[:space:]]*"[^"]*"[[:space:]]*//g' "$manifest" 2>/dev/null || true
             fi
+          done
+          
+          # Also fix critical node_modules manifests one more time
+          echo "🔧 Final node_modules cleanup..."
+          for plugin in "capacitor-android" "capacitor-community-admob" "capacitor-camera" "codetrix-studio-capacitor-google-auth" "capacitor-filesystem" "capacitor-cordova-android-plugins"; do
+            find ../node_modules -path "*$plugin*" -name "AndroidManifest.xml" 2>/dev/null | while read manifest; do
+              if [ -f "$manifest" ] && grep -q "package=" "$manifest" 2>/dev/null; then
+                echo "🔧 Final fix for $plugin: $manifest"
+                sed -i 's/package="[^"]*"//g' "$manifest" 2>/dev/null || true
+                sed -i 's/package = "[^"]*"//g' "$manifest" 2>/dev/null || true
+                sed -i 's/package=[^[:space:]">]*//g' "$manifest" 2>/dev/null || true
+                sed -i 's/<manifest[[:space:]]*package="[^"]*"/<manifest/g' "$manifest" 2>/dev/null || true
+                sed -i 's/[[:space:]]*package[[:space:]]*=[[:space:]]*"[^"]*"[[:space:]]*//g' "$manifest" 2>/dev/null || true
+              fi
+            done
           done
 
           echo ""
-          echo "📊 Final manifest statistics:"
-          TOTAL_MANIFESTS=$(find . -name "AndroidManifest.xml" -type f | wc -l)
-          PROBLEMATIC_MANIFESTS=$(find . -name "AndroidManifest.xml" -type f -exec grep -l "package=" {} \; 2>/dev/null | wc -l)
-          echo "  Total manifests: $TOTAL_MANIFESTS"
-          echo "  With package attribute: $PROBLEMATIC_MANIFESTS"
-
-          if [ "$PROBLEMATIC_MANIFESTS" -gt 0 ]; then
-            echo "⚠️ Still found $PROBLEMATIC_MANIFESTS manifests with package attributes:"
-            find . -name "AndroidManifest.xml" -type f -exec grep -l "package=" {} \; 2>/dev/null | head -5
+          echo "📊 FINAL MANIFEST REPORT:"
+          TOTAL_PROJECT=$(find . -name "AndroidManifest.xml" -type f | wc -l)
+          PROBLEMATIC_PROJECT=$(find . -name "AndroidManifest.xml" -type f -exec grep -l "package=" {} \; 2>/dev/null | wc -l || echo "0")
+          TOTAL_NODE_MODULES=$(find ../node_modules -name "AndroidManifest.xml" 2>/dev/null | wc -l || echo "0")
+          PROBLEMATIC_NODE_MODULES=$(find ../node_modules -name "AndroidManifest.xml" -exec grep -l "package=" {} \; 2>/dev/null | wc -l || echo "0")
+          
+          echo "  📂 Project manifests: $TOTAL_PROJECT total, $PROBLEMATIC_PROJECT with package attributes"
+          echo "  📦 Node modules manifests: $TOTAL_NODE_MODULES total, $PROBLEMATIC_NODE_MODULES with package attributes"
+          
+          if [ "$PROBLEMATIC_PROJECT" -gt 0 ]; then
+            echo "  ❌ Project manifests still have issues:"
+            find . -name "AndroidManifest.xml" -type f -exec grep -l "package=" {} \; 2>/dev/null | head -3
+          else
+            echo "  ✅ All project manifests are clean"
           fi
 
       - name: Force Install AndroidX Activity & Firebase
