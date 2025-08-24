@@ -27,14 +27,14 @@ subprojects {
                 compileSdk 34
 
                 compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
+                    sourceCompatibility JavaVersion.VERSION_21
+                    targetCompatibility JavaVersion.VERSION_21
                 }
 
                 // For Kotlin projects, set JVM target to match Java
                 if (sub.plugins.hasPlugin('org.jetbrains.kotlin.android')) {
                     kotlinOptions {
-                        jvmTarget = "17"
+                        jvmTarget = "21"
                         freeCompilerArgs += [
                             "-Xjvm-default=all",
                             "-Xbackend-threads=0"
@@ -46,14 +46,14 @@ subprojects {
 
         // Configure Java compilation for all projects
         tasks.withType(JavaCompile).configureEach {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
         }
 
         // Configure Kotlin compilation for all projects
         tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
             kotlinOptions {
-                jvmTarget = "17"
+                jvmTarget = "21"
                 freeCompilerArgs += [
                     "-Xjvm-default=all",
                     "-Xbackend-threads=0"

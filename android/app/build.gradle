@@ -30,15 +30,15 @@ android {
         }
     }
 
-    // ✅ Ensure Java 17 compatibility
+    // ✅ Ensure Java 21 compatibility
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
-    // ✅ Ensure Kotlin targets Java 17
+    // ✅ Ensure Kotlin targets Java 21
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
         freeCompilerArgs += [
             "-Xjvm-default=all",
             "-Xbackend-threads=0"
