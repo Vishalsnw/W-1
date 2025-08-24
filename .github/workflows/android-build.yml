@@ -68,9 +68,20 @@ jobs:
         run: |
           cd android
           echo "🔧 Setting up Gradle wrapper..."
+          
+          # Ensure gradlew is executable (fix permission issues)
+          chmod +x gradlew gradlew.bat || true
+          
+          # Remove old jar
           rm -f gradle/wrapper/gradle-wrapper.jar
+          
+          # Regenerate wrapper with Gradle 8.4
           ./gradlew wrapper --gradle-version 8.4 --distribution-type all
+          
+          # Fix execute permissions again (new gradlew may be generated)
           chmod +x gradlew gradlew.bat
+          
+          # Verify gradlew works
           ./gradlew --version || echo "Gradlew verification failed but continuing..."
 
       - name: Post-Fix Setup
