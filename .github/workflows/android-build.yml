@@ -68,13 +68,10 @@ jobs:
         run: |
           cd android
           echo "🔧 Setting up Gradle wrapper..."
-          
           mkdir -p gradle/wrapper
           rm -f gradle/wrapper/gradle-wrapper.jar
-          
-          echo "Downloading gradle wrapper jar..."
-          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
-          
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-8.4-bin.zip
+          unzip -p gradle-8.4-bin.zip gradle-8.4/lib/gradle-wrapper-*.jar > gradle/wrapper/gradle-wrapper.jar
           chmod +x gradlew gradlew.bat
           ./gradlew --version || echo "Gradlew verification failed but continuing..."
 
