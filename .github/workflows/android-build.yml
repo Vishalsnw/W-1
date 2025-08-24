@@ -59,9 +59,9 @@ jobs:
           echo "kotlin.code.style=official" >> android/gradle.properties
           echo "kotlin.version=1.9.22" >> android/gradle.properties
 
-          # Add Firebase to root build.gradle
+          # Add Firebase to root build.gradle if missing
           if ! grep -q "google-services" android/build.gradle; then
-            sed -i '/classpath.*gradle/a \        classpath "com.google.gms:google-services:4.4.0"\n        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"' android/build.gradle
+            sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.4.0"\n        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"' android/build.gradle
           fi
 
       - name: Setup Gradle Wrapper
@@ -69,96 +69,41 @@ jobs:
           cd android
           echo "🔧 Setting up Gradle wrapper..."
           
-          # Ensure gradle wrapper directory exists
           mkdir -p gradle/wrapper
-          
-          # Remove any corrupted gradle wrapper jar
           rm -f gradle/wrapper/gradle-wrapper.jar
           
-          # Download gradle wrapper jar from multiple sources with verification
           echo "Downloading gradle wrapper jar..."
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
           
-          # Try primary source first
-          if curl -L -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar; then
-            echo "Downloaded from primary source"
-          elif curl -L -o gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/gradle/wrapper/gradle-wrapper.jar; then
-            echo "Downloaded from secondary source"
-          else
-            echo "❌ Failed to download gradle wrapper jar from all sources"
-            exit 1
-          fi
-          
-          # Verify the downloaded file is a valid jar (simple checks)
-          # Check if file starts with PK (ZIP/JAR signature) using simple head command
-          FIRST_TWO_BYTES=$(head -c 2 gradle/wrapper/gradle-wrapper.jar | od -An -tx1 | tr -d ' ' | tr '[:lower:]' '[:upper:]')
-          
-          if [ "$FIRST_TWO_BYTES" = "504B" ]; then
-            echo "✅ File signature verified (ZIP/JAR format)"
-          elif [ -n "$FIRST_TWO_BYTES" ]; then
-            echo "⚠️ Unexpected file signature: $FIRST_TWO_BYTES (expected 504B)"
-            echo "File content preview:"
-            head -c 50 gradle/wrapper/gradle-wrapper.jar
-            # Continue anyway as file might still be valid
-          else
-            echo "⚠️ Could not verify file signature, but file exists - proceeding"
-          fi
-          
-          # Verify file size is reasonable (should be > 10KB for a valid gradle wrapper)
-          FILE_SIZE=$(wc -c < gradle/wrapper/gradle-wrapper.jar)
-          if [ "$FILE_SIZE" -lt 10000 ]; then
-            echo "❌ Gradle wrapper jar is too small ($FILE_SIZE bytes), likely corrupted"
-            exit 1
-          fi
-          
-          echo "✅ Gradle wrapper jar is ready ($FILE_SIZE bytes, valid ZIP/JAR format)"
-          
-          # Make gradlew executable
           chmod +x gradlew gradlew.bat
-          
-          # Verify gradlew works
-          echo "Testing gradle wrapper..."
           ./gradlew --version || echo "Gradlew verification failed but continuing..."
 
       - name: Post-Fix Setup
         run: |
-          # Sync Capacitor after our fixes
           npx cap sync android
 
-          # Add Firebase plugins to app
-          if ! grep -q "com.google.firebase.crashlytics" android/app/build.gradle; then
-            sed -i '/apply plugin: "com.android.application"/a apply plugin: "com.google.gms.google-services"\napply plugin: "com.google.firebase.crashlytics"' android/app/build.gradle
+          # Add Firebase plugins to app build.gradle
+          if ! grep -q "com.google.gms.google-services" android/app/build.gradle; then
+            sed -i '/plugins {/a \    id "com.google.gms.google-services"\n    id "com.google.firebase.crashlytics"' android/app/build.gradle
           fi
 
           # Add required dependencies
-          if ! grep -q "androidx.activity:activity" android/app/build.gradle; then
-            sed -i '/dependencies {/a \    implementation "androidx.activity:activity:1.7.2"\n    implementation "androidx.activity:activity-ktx:1.7.2"\n    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-crashlytics"\n    implementation "com.google.firebase:firebase-analytics"' android/app/build.gradle
+          if ! grep -q "firebase-crashlytics" android/app/build.gradle; then
+            sed -i '/dependencies {/a \    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-crashlytics"\n    implementation "com.google.firebase:firebase-analytics"\n    implementation "androidx.activity:activity:1.7.2"\n    implementation "androidx.activity:activity-ktx:1.7.2"' android/app/build.gradle
           fi
 
       - name: Final Pre-Build Check
         run: |
           cd android
           echo "🔍 Final verification..."
-
-          # Check critical structure
           if [ ! -d "capacitor-cordova-android-plugins" ]; then
-            echo "❌ CRITICAL: capacitor-cordova-android-plugins missing"
+            echo "❌ capacitor-cordova-android-plugins missing"
             exit 1
           fi
-
-          if [ ! -f "capacitor-cordova-android-plugins/build.gradle" ]; then
-            echo "❌ CRITICAL: build.gradle missing"
-            exit 1
-          fi
-
           if [ ! -f "app/google-services.json" ]; then
-            echo "❌ CRITICAL: google-services.json missing"
+            echo "❌ google-services.json missing"
             exit 1
           fi
-
-          # Quick manifest check
-          REMAINING=$(find . -name "AndroidManifest.xml" -exec grep -l "package=" {} \; 2>/dev/null | wc -l)
-          echo "📊 Manifests with package attributes: $REMAINING"
-
           echo "✅ All critical checks passed"
 
       - name: Accept SDK Licenses
@@ -167,20 +112,8 @@ jobs:
       - name: Build APK
         run: |
           cd android
-          echo "🔨 Starting final build..."
-
-          # Ensure gradlew is executable
           chmod +x gradlew
-
-          # Clean build
-          if [ -f "gradlew" ]; then
-            ./gradlew clean --no-daemon
-          else
-            echo "❌ gradlew not found, cannot build"
-            exit 1
-          fi
-
-          # Build with detailed output
+          ./gradlew clean --no-daemon
           ./gradlew assembleDebug --no-daemon --stacktrace > ../build-output.log 2>&1
           BUILD_STATUS=$?
 
@@ -189,11 +122,8 @@ jobs:
             ls -la app/build/outputs/apk/debug/
           else
             echo "❌ BUILD FAILED"
-            echo "Last 50 lines of build output:"
             tail -50 ../build-output.log
-            echo ""
-            echo "Critical errors:"
-            grep -i -E "FAILED|ERROR|Exception|package.*attribute" ../build-output.log | tail -10 || echo "No obvious errors found"
+            grep -i -E "FAILED|ERROR|Exception" ../build-output.log | tail -10 || true
             exit 1
           fi
 
