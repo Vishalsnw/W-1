@@ -92,38 +92,38 @@ jobs:
             
             # Create minimal AndroidManifest.xml
             cat > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml << 'EOF'
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-</manifest>
-EOF
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            </manifest>
+            EOF
 
             # Create minimal build.gradle
             cat > capacitor-cordova-android-plugins/build.gradle << 'EOF'
-apply plugin: 'com.android.library'
+            apply plugin: 'com.android.library'
 
-android {
-    namespace "capacitor.cordova.android.plugins"
-    compileSdk 34
-    
-    defaultConfig {
-        minSdk 22
-        targetSdk 34
-    }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
-    }
-}
+            android {
+                namespace "capacitor.cordova.android.plugins"
+                compileSdk 34
+                
+                defaultConfig {
+                    minSdk 22
+                    targetSdk 34
+                }
+                
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_21
+                    targetCompatibility JavaVersion.VERSION_21
+                }
+            }
 
-repositories {
-    google()
-    mavenCentral()
-}
+            repositories {
+                google()
+                mavenCentral()
+            }
 
-dependencies {
-    implementation project(':capacitor-android')
-}
-EOF
+            dependencies {
+                implementation project(':capacitor-android')
+            }
+            EOF
             echo "✅ Created capacitor-cordova-android-plugins structure"
           fi
 
