@@ -69,7 +69,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    // Firebase (BOM keeps versions aligned) - Updated to latest version
+    // Firebase (BOM keeps versions aligned)
     implementation platform('com.google.firebase:firebase-bom:34.1.0')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-auth-ktx'
