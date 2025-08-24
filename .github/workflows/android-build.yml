@@ -71,14 +71,12 @@ jobs:
 
           # Run fix scripts if they exist
           if [ -f "./fix-all-build-issues.sh" ]; then
-            echo "Running fix-all-build-issues.sh..."
             ./fix-all-build-issues.sh
           else
             echo "⚠️ fix-all-build-issues.sh not found, skipping..."
           fi
 
           if [ -f "./fix-gradle-issues.sh" ]; then
-            echo "Running fix-gradle-issues.sh..."
             ./fix-gradle-issues.sh
           else
             echo "⚠️ fix-gradle-issues.sh not found, skipping..."
@@ -89,23 +87,23 @@ jobs:
             echo "🔧 Creating missing capacitor-cordova-android-plugins directory..."
             mkdir -p capacitor-cordova-android-plugins/src/main/java
             mkdir -p capacitor-cordova-android-plugins/src/main/res
-            
-            # Create minimal AndroidManifest.xml
-            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
 
-            # Create minimal build.gradle
-            cat > capacitor-cordova-android-plugins/build.gradle << 'EOF'
-apply plugin: 'com.android.library'
+            # Create minimal AndroidManifest.xml
+            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' \
+              > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
+
+            # Create minimal build.gradle safely (avoids YAML heredoc errors)
+            echo "apply plugin: 'com.android.library'
 
 android {
-    namespace "capacitor.cordova.android.plugins"
+    namespace 'capacitor.cordova.android.plugins'
     compileSdk 34
-    
+
     defaultConfig {
         minSdk 22
         targetSdk 34
     }
-    
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
@@ -119,15 +117,13 @@ repositories {
 
 dependencies {
     implementation project(':capacitor-android')
-}
-EOF
+}" > capacitor-cordova-android-plugins/build.gradle
+
             echo "✅ Created capacitor-cordova-android-plugins structure"
           fi
 
       - name: Sync Capacitor
-        run: |
-          echo "🔄 Syncing Capacitor..."
-          npx cap sync android
+        run: npx cap sync android
 
       - name: Validate Firebase Configuration
         run: |
@@ -136,7 +132,6 @@ EOF
             chmod +x test-firebase.sh
             ./test-firebase.sh
           else
-            echo "⚠️ test-firebase.sh not found, checking Firebase config manually..."
             if [ -f "app/google-services.json" ]; then
               echo "✅ google-services.json found"
             else
@@ -164,10 +159,7 @@ EOF
             ls -la app/build/outputs/apk/debug/
           else
             echo "❌ BUILD FAILED"
-            echo "Last 100 lines of build output:"
             tail -100 ../build-output.log
-            echo ""
-            echo "Error summary:"
             grep -i -E "FAILED|ERROR|Exception|Task.*failed" ../build-output.log | tail -20 || true
             exit 1
           fi
