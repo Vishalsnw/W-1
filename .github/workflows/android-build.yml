@@ -54,36 +54,28 @@ jobs:
           cd android
           chmod +x gradlew gradlew.bat
           chmod +x *.sh
-
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "Creating Gradle wrapper..."
             ./gradlew wrapper --gradle-version=8.4 --distribution-type=bin
           fi
 
       - name: Fix Build Issues
         run: |
           cd android
-          echo "🔧 Running comprehensive build fixes..."
+          echo "🔧 Running build fixes..."
 
           find . -name "*.sh" -exec chmod +x {} \;
 
           if [ -f "./fix-all-build-issues.sh" ]; then
             ./fix-all-build-issues.sh
-          else
-            echo "⚠️ fix-all-build-issues.sh not found, skipping..."
           fi
 
           if [ -f "./fix-gradle-issues.sh" ]; then
             ./fix-gradle-issues.sh
-          else
-            echo "⚠️ fix-gradle-issues.sh not found, skipping..."
           fi
 
           if [ ! -d "capacitor-cordova-android-plugins" ]; then
-            echo "🔧 Creating missing capacitor-cordova-android-plugins directory..."
             mkdir -p capacitor-cordova-android-plugins/src/main/java
             mkdir -p capacitor-cordova-android-plugins/src/main/res
-
             echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' \
               > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
 
@@ -114,8 +106,6 @@ dependencies {
     implementation project(':capacitor-android')
 }
 EOF
-
-            echo "✅ Created capacitor-cordova-android-plugins structure"
           fi
 
       - name: Sync Capacitor
@@ -127,12 +117,10 @@ EOF
           if [ -f "./test-firebase.sh" ]; then
             chmod +x test-firebase.sh
             ./test-firebase.sh
+          elif [ -f "app/google-services.json" ]; then
+            echo "✅ google-services.json found"
           else
-            if [ -f "app/google-services.json" ]; then
-              echo "✅ google-services.json found"
-            else
-              echo "❌ google-services.json missing"
-            fi
+            echo "❌ google-services.json missing"
           fi
 
       - name: Accept SDK Licenses
@@ -149,7 +137,6 @@ EOF
           echo "🏗️ Building Android APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace > ../build-output.log 2>&1
           BUILD_STATUS=$?
-
           if [ $BUILD_STATUS -eq 0 ]; then
             echo "🎉 BUILD SUCCESS!"
             ls -la app/build/outputs/apk/debug/
