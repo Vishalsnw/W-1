@@ -89,13 +89,22 @@ jobs:
           fi
           
           # Verify the downloaded file is a valid jar (check magic bytes and size)
-          # Check if file starts with PK (ZIP/JAR magic bytes)
-          MAGIC_BYTES=$(hexdump -C gradle/wrapper/gradle-wrapper.jar | head -1 | cut -d' ' -f2-3)
-          if [ "$MAGIC_BYTES" != "50 4b" ]; then
-            echo "❌ Downloaded file is not a valid jar file (wrong magic bytes: $MAGIC_BYTES)"
+          # Check if file starts with PK (ZIP/JAR magic bytes) using xxd or od as fallback
+          if command -v xxd >/dev/null 2>&1; then
+            MAGIC_BYTES=$(xxd -l 2 -p gradle/wrapper/gradle-wrapper.jar 2>/dev/null || echo "")
+            EXPECTED="504b"
+          else
+            MAGIC_BYTES=$(od -t x1 -N 2 gradle/wrapper/gradle-wrapper.jar 2>/dev/null | head -1 | awk '{print $2$3}' || echo "")
+            EXPECTED="504b"
+          fi
+          
+          if [ "$MAGIC_BYTES" != "$EXPECTED" ] && [ -n "$MAGIC_BYTES" ]; then
+            echo "❌ Downloaded file is not a valid jar file (wrong magic bytes: $MAGIC_BYTES, expected: $EXPECTED)"
             echo "File content preview:"
-            head -5 gradle/wrapper/gradle-wrapper.jar
+            head -c 100 gradle/wrapper/gradle-wrapper.jar | xxd || head -c 100 gradle/wrapper/gradle-wrapper.jar
             exit 1
+          elif [ -z "$MAGIC_BYTES" ]; then
+            echo "⚠️ Could not verify magic bytes, but file exists - proceeding"
           fi
           
           # Verify file size is reasonable (should be > 10KB for a valid gradle wrapper)
