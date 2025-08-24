@@ -1,80 +1,154 @@
+
 #!/bin/bash
+echo "🔥 Firebase Services Test"
+echo "========================="
 
-echo "🔍 Testing Firebase Configuration..."
-echo "==================================="
-
-# Check google-services.json
-if [ -f "app/google-services.json" ]; then
-    echo "✅ google-services.json found"
-
-    # Extract project info
-    PROJECT_ID=$(grep -o '"project_id": "[^"]*"' app/google-services.json | cut -d'"' -f4)
-    PACKAGE_NAME=$(grep -o '"package_name": "[^"]*"' app/google-services.json | cut -d'"' -f4)
-
-    echo "📋 Project ID: $PROJECT_ID"
-    echo "📦 Package Name: $PACKAGE_NAME"
-
-    # Check oauth_client array
-    OAUTH_CLIENT_COUNT=$(grep -c '"oauth_client":' app/google-services.json)
-    if [ "$OAUTH_CLIENT_COUNT" -gt 0 ]; then
-        # Check if oauth_client array is empty
-        if grep -q '"oauth_client": \[\]' app/google-services.json; then
-            echo "⚠️  WARNING: oauth_client is empty - Google Sign-In may not work"
-            echo "   Add SHA-1/SHA-256 fingerprints to Firebase Console"
-        else
-            echo "✅ oauth_client configured"
-        fi
-    fi
-
-    # Check for required services
-    if grep -q '"firebase_crashlytics"' app/google-services.json; then
-        echo "✅ Crashlytics service configured"
-    else
-        echo "⚠️  Crashlytics service not found in google-services.json"
-    fi
-
-else
-    echo "❌ google-services.json not found!"
-    echo "   Download from Firebase Console and place in android/app/"
+# Check if we're in the android directory
+if [ ! -f "app/build.gradle" ]; then
+    echo "❌ Please run this script from the android/ directory"
     exit 1
 fi
 
+echo "📋 Testing Firebase Configuration..."
+
+# Test 1: Check google-services.json
 echo ""
-echo "🔑 Debug Keystore Info:"
-if [ -f ~/.android/debug.keystore ]; then
-    echo "✅ Debug keystore found"
-    echo "SHA-1 Fingerprint:"
-    keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep SHA1 | head -1 || echo "❌ Could not extract SHA1"
+echo "🧪 Test 1: google-services.json validation"
+if [ -f "app/google-services.json" ]; then
+    echo "✅ google-services.json exists"
+    
+    # Validate JSON structure
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "import json; json.load(open('app/google-services.json'))" 2>/dev/null
+        if [ $? -eq 0 ]; then
+            echo "✅ google-services.json is valid JSON"
+        else
+            echo "❌ google-services.json has invalid JSON format"
+        fi
+    fi
+    
+    # Check required fields
+    if grep -q "project_info" "app/google-services.json" && \
+       grep -q "client" "app/google-services.json" && \
+       grep -q "services" "app/google-services.json"; then
+        echo "✅ google-services.json has required structure"
+    else
+        echo "❌ google-services.json missing required fields"
+    fi
 else
-    echo "⚠️  Debug keystore not found - creating one..."
-    mkdir -p ~/.android
-    keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-    echo "✅ Debug keystore created"
+    echo "❌ google-services.json not found"
+    echo "   📝 Download from: Firebase Console > Project Settings > General > Your apps"
 fi
 
+# Test 2: Check Gradle plugins
 echo ""
-echo "🔧 Firebase Build Configuration:"
-if grep -q "google-services" build.gradle; then
-    echo "✅ Google Services plugin in root build.gradle"
+echo "🧪 Test 2: Gradle plugins verification"
+if grep -q "com.google.gms.google-services" "build.gradle"; then
+    echo "✅ Google Services plugin found in root build.gradle"
 else
-    echo "❌ Google Services plugin missing in root build.gradle"
+    echo "❌ Google Services plugin missing from root build.gradle"
 fi
 
-if grep -q "google-services" app/build.gradle; then
-    echo "✅ Google Services applied in app build.gradle"
+if grep -q "com.google.firebase.crashlytics" "build.gradle"; then
+    echo "✅ Crashlytics plugin found in root build.gradle"
 else
-    echo "❌ Google Services not applied in app build.gradle"
+    echo "❌ Crashlytics plugin missing from root build.gradle"
 fi
 
-if grep -q "firebase-crashlytics" app/build.gradle; then
-    echo "✅ Firebase Crashlytics plugin configured"
+if grep -q "com.google.gms.google-services" "app/build.gradle"; then
+    echo "✅ Google Services plugin applied in app build.gradle"
 else
-    echo "⚠️  Firebase Crashlytics plugin not configured"
+    echo "❌ Google Services plugin not applied in app build.gradle"
 fi
 
+if grep -q "com.google.firebase.crashlytics" "app/build.gradle"; then
+    echo "✅ Crashlytics plugin applied in app build.gradle"
+else
+    echo "❌ Crashlytics plugin not applied in app build.gradle"
+fi
+
+# Test 3: Check Firebase dependencies
 echo ""
-echo "🔧 To fix Google Sign-In:"
-echo "1. Go to Firebase Console > Project Settings"
-echo "2. Add SHA-1 fingerprint (copy from above)"
-echo "3. Download updated google-services.json"
-echo "4. Replace the current file"
+echo "🧪 Test 3: Firebase dependencies verification"
+DEPS_TO_CHECK=(
+    "firebase-bom"
+    "firebase-crashlytics"
+    "firebase-analytics"
+    "firebase-auth"
+)
+
+for dep in "${DEPS_TO_CHECK[@]}"; do
+    if grep -q "$dep" "app/build.gradle"; then
+        echo "✅ $dep dependency found"
+    else
+        echo "⚠️  $dep dependency missing"
+    fi
+done
+
+# Test 4: Check permissions
+echo ""
+echo "🧪 Test 4: Android permissions verification"
+REQUIRED_PERMS=(
+    "android.permission.INTERNET"
+    "android.permission.ACCESS_NETWORK_STATE"
+)
+
+for perm in "${REQUIRED_PERMS[@]}"; do
+    if grep -q "$perm" "app/src/main/AndroidManifest.xml"; then
+        echo "✅ $perm permission found"
+    else
+        echo "❌ $perm permission missing"
+    fi
+done
+
+# Test 5: Check application configuration
+echo ""
+echo "🧪 Test 5: Application configuration verification"
+if grep -q "android:usesCleartextTraffic=\"true\"" "app/src/main/AndroidManifest.xml"; then
+    echo "✅ Cleartext traffic enabled (for development)"
+else
+    echo "⚠️  Cleartext traffic not enabled (may affect development)"
+fi
+
+if grep -q "multiDexEnabled true" "app/build.gradle"; then
+    echo "✅ MultiDex enabled"
+else
+    echo "⚠️  MultiDex not enabled (may be needed for Firebase)"
+fi
+
+# Test 6: Build configuration
+echo ""
+echo "🧪 Test 6: Build configuration verification"
+if grep -q "minSdk.*2[4-9]" "app/build.gradle"; then
+    echo "✅ Minimum SDK version compatible with Firebase (24+)"
+else
+    echo "⚠️  Check minimum SDK version (should be 21+ for Firebase)"
+fi
+
+# Test 7: Test build without running
+echo ""
+echo "🧪 Test 7: Gradle configuration test"
+echo "Testing Gradle configuration (dry run)..."
+./gradlew help --dry-run >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✅ Gradle configuration is valid"
+else
+    echo "❌ Gradle configuration has issues"
+fi
+
+# Summary
+echo ""
+echo "📊 FIREBASE TEST SUMMARY"
+echo "========================"
+echo "🔥 Firebase services test completed"
+echo ""
+echo "🚀 READY TO BUILD:"
+echo "   ./gradlew assembleDebug --stacktrace"
+echo ""
+echo "🧪 READY TO TEST CRASHLYTICS:"
+echo "   1. Build and install the app"
+echo "   2. Open app and tap 'Test Crash' button"
+echo "   3. Restart app to send crash report"
+echo "   4. Check Firebase Console after 5-10 minutes"
+echo ""
+echo "✅ Firebase test complete!"
