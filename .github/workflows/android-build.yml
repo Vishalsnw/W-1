@@ -89,11 +89,11 @@ jobs:
             mkdir -p capacitor-cordova-android-plugins/src/main/res
 
             # Create minimal AndroidManifest.xml
-            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' \
-              > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
+            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
 
-            # Create minimal build.gradle safely (avoids YAML heredoc errors)
-            echo "apply plugin: 'com.android.library'
+            # Create minimal build.gradle safely (no YAML conflict)
+            cat <<'EOF' > capacitor-cordova-android-plugins/build.gradle
+apply plugin: 'com.android.library'
 
 android {
     namespace 'capacitor.cordova.android.plugins'
@@ -117,7 +117,8 @@ repositories {
 
 dependencies {
     implementation project(':capacitor-android')
-}" > capacitor-cordova-android-plugins/build.gradle
+}
+EOF
 
             echo "✅ Created capacitor-cordova-android-plugins structure"
           fi
