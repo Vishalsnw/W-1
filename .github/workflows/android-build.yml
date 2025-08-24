@@ -64,6 +64,11 @@ jobs:
             sed -i '/classpath.*gradle/a \        classpath "com.google.gms:google-services:4.4.0"\n        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"' android/build.gradle
           fi
 
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y file
+
       - name: Setup Gradle Wrapper
         run: |
           cd android
@@ -88,8 +93,8 @@ jobs:
             exit 1
           fi
           
-          # Verify the downloaded file is a valid jar (should not contain HTML)
-          if file gradle/wrapper/gradle-wrapper.jar | grep -q "HTML\|text"; then
+          # Verify the downloaded file is a valid jar (check for HTML content without file command)
+          if head -c 1000 gradle/wrapper/gradle-wrapper.jar | grep -q -i "html\|<!DOCTYPE\|<title>"; then
             echo "❌ Downloaded file appears to be HTML/text, not a jar file"
             echo "File content preview:"
             head -5 gradle/wrapper/gradle-wrapper.jar
