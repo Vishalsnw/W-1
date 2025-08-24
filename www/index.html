@@ -429,3 +429,170 @@
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsOrder - Crashlytics Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .crash-btn {
+            background-color: #ff4757;
+            color: white;
+        }
+        .crash-btn:hover {
+            background-color: #ff3838;
+        }
+        .auth-btn {
+            background-color: #4285f4;
+            color: white;
+        }
+        .auth-btn:hover {
+            background-color: #3367d6;
+        }
+        .log-btn {
+            background-color: #26de81;
+            color: white;
+        }
+        .log-btn:hover {
+            background-color: #20bf6b;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WhatsOrder</h1>
+        <p>Crashlytics Test Interface</p>
+        
+        <button id="testCrashBtn" class="crash-btn">
+            🔥 Test Crash (Crashlytics Setup)
+        </button>
+        
+        <button id="googleSignInBtn" class="auth-btn">
+            📱 Test Google Sign In
+        </button>
+        
+        <button id="logEventBtn" class="log-btn">
+            📝 Log Test Event
+        </button>
+        
+        <div id="status" class="status"></div>
+        
+        <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px;">
+            <h3>🚨 Testing Instructions:</h3>
+            <ol>
+                <li>Click "Test Crash" to verify Crashlytics setup</li>
+                <li>App will crash - restart it manually</li>
+                <li>Check Firebase Console for crash report</li>
+                <li>Test other features to generate breadcrumbs</li>
+            </ol>
+        </div>
+    </div>
+
+    <script type="module">
+        import { testCrash, recordBreadcrumb, logEvent, recordException } from './src/crashlytics.js';
+        import { signInWithGoogle } from './src/google-auth.js';
+
+        const statusDiv = document.getElementById('status');
+
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Test crash button
+        document.getElementById('testCrashBtn').addEventListener('click', async () => {
+            try {
+                await recordBreadcrumb('User clicked Test Crash button', 'testing');
+                showStatus('Forcing test crash... App will restart');
+                
+                // Small delay to show the message
+                setTimeout(async () => {
+                    await testCrash();
+                }, 1000);
+            } catch (error) {
+                showStatus('Test crash failed: ' + error.message, true);
+            }
+        });
+
+        // Google Sign In button
+        document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+            try {
+                await recordBreadcrumb('User clicked Google Sign In test button', 'testing');
+                const result = await signInWithGoogle();
+                showStatus('Google Sign In successful!');
+                console.log('Sign in result:', result);
+            } catch (error) {
+                showStatus('Google Sign In failed: ' + error.message, true);
+                await recordException(error);
+            }
+        });
+
+        // Log event button
+        document.getElementById('logEventBtn').addEventListener('click', async () => {
+            try {
+                await recordBreadcrumb('User clicked Log Event test button', 'testing');
+                await logEvent('Test event logged from UI');
+                showStatus('Test event logged successfully!');
+            } catch (error) {
+                showStatus('Failed to log event: ' + error.message, true);
+                await recordException(error);
+            }
+        });
+
+        // Log app startup
+        window.addEventListener('load', async () => {
+            try {
+                await recordBreadcrumb('App loaded successfully', 'app_lifecycle');
+                await logEvent('App startup completed');
+            } catch (error) {
+                console.error('Failed to log startup:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -75,3 +75,28 @@ args = "echo \"✅ APK built successfully!\""
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "ls -la app/build/outputs/apk/debug/"
+
+[[workflows.workflow]]
+name = "Verify Crashlytics Setup"
+author = 46840319
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd android"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "chmod +x verify-crashlytics.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./verify-crashlytics.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"🧪 Ready to test Crashlytics!\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"Build the app and test the crash functionality\""

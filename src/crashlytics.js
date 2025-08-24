@@ -68,13 +68,43 @@ export async function recordException(error, isFatal = false) {
   }
 }
 
-// Crash the app intentionally (for testing only)
-export async function crash() {
+// Force a test crash to finish setup (for testing only)
+export async function testCrash() {
   try {
     if (Capacitor.isNativePlatform()) {
       await FirebaseCrashlytics.crash();
+    } else {
+      // For web testing, throw a runtime error
+      throw new Error('Test Crash - Crashlytics Setup Verification');
     }
   } catch (error) {
-    console.error('Failed to crash app:', error);
+    console.error('Test crash executed:', error);
+    throw error; // Re-throw to ensure crash is recorded
+  }
+}
+
+// Record breadcrumb logs for user actions
+export async function recordBreadcrumb(message, category = 'user_action') {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.log({ 
+        message: `[${category}] ${message}` 
+      });
+    }
+    console.log(`Breadcrumb: [${category}] ${message}`);
+  } catch (error) {
+    console.error('Failed to record breadcrumb:', error);
+  }
+}
+
+// Enable/disable crash reporting
+export async function setCrashlyticsCollectionEnabled(enabled) {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      await FirebaseCrashlytics.setEnabled({ enabled });
+      console.log(`Crashlytics collection ${enabled ? 'enabled' : 'disabled'}`);
+    }
+  } catch (error) {
+    console.error('Failed to set crashlytics collection:', error);
   }
 }

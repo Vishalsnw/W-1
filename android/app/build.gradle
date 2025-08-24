@@ -69,12 +69,14 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    // Firebase (BOM keeps versions aligned)
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    // Firebase (BOM keeps versions aligned) - Updated to latest version
+    implementation platform('com.google.firebase:firebase-bom:34.1.0')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.firebase:firebase-crashlytics'
     implementation 'com.google.firebase:firebase-analytics'
+    // Add Crashlytics NDK for native crash reporting
+    implementation 'com.google.firebase:firebase-crashlytics-ndk'
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
 
     // Capacitor core + plugins

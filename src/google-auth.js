@@ -3,7 +3,7 @@ import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { initializeCrashlytics, logEvent, recordException, setUserId } from './crashlytics.js';
+import { initializeCrashlytics, logEvent, recordException, setUserId, recordBreadcrumb } from './crashlytics.js';
 
 // Initialize Google Auth with error handling
 async function initializeGoogleAuth() {
@@ -40,24 +40,29 @@ initialize();
 // Google Sign In function
 export async function signInWithGoogle() {
   try {
+    await recordBreadcrumb('User initiated Google Sign In', 'auth');
     await logEvent('Attempting Google Sign In');
     
     if (!Capacitor.isNativePlatform()) {
       throw new Error('Google Sign In only available on native platforms');
     }
     
+    await recordBreadcrumb('Calling GoogleAuth.signIn()', 'auth');
     const result = await GoogleAuth.signIn();
     console.log('Google Sign In Success:', result);
     
     // Set user ID for Crashlytics
     if (result.authentication && result.authentication.accessToken) {
       await setUserId(result.authentication.accessToken.substring(0, 10));
+      await recordBreadcrumb('User ID set for Crashlytics', 'auth');
     }
     
     await logEvent('Google Sign In Success');
+    await recordBreadcrumb('Google Sign In completed successfully', 'auth');
     return result;
   } catch (error) {
     console.error('Google Sign In Error:', error);
+    await recordBreadcrumb(`Google Sign In failed: ${error.message}`, 'auth_error');
     await recordException(error);
     await logEvent('Google Sign In Failed: ' + error.message);
     throw error;
