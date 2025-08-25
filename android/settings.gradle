@@ -34,7 +34,7 @@ include ':capacitor-filesystem'
 project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacitor/filesystem/android')
 
 include ':codetrix-studio-capacitor-google-auth'
-project(':codetrix-studio-capacitor-google-auth').projectDir = new File('../node_modules/@codetrix-studio/capacitor-google-auth/android')
+project(':codetrix-studio-capacitor-google-auth').projectDir = new File('codetrix-studio-capacitor-google-auth/')
 project(':codetrix-studio-capacitor-google-auth').buildFileName = 'build.gradle'
 
 include ':capacitor-community-admob'
