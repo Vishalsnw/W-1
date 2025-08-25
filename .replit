@@ -1,5 +1,5 @@
 run = "npm run dev"
-modules = ["web", "bash", "java-graalvm22.3", "nodejs-20"]
+modules = ["web", "bash", "nodejs-20", "java-graalvm22.3"]
 [nix]
 channel = "stable-25_05"
 packages = ["gradle_7", "timetrap"]
