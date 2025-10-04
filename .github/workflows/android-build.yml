@@ -62,48 +62,16 @@ jobs:
           cd android
           echo "🔧 Running build fixes..."
           
+          # Make all shell scripts executable
           find . -name "*.sh" -exec chmod +x {} \;
           
+          # Run available fix scripts
           if [ -f "./fix-all-build-issues.sh" ]; then
             ./fix-all-build-issues.sh
           fi
           
           if [ -f "./fix-gradle-issues.sh" ]; then
             ./fix-gradle-issues.sh
-          fi
-          
-          if [ ! -d "capacitor-cordova-android-plugins" ]; then
-            mkdir -p capacitor-cordova-android-plugins/src/main/java
-            mkdir -p capacitor-cordova-android-plugins/src/main/res
-            echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"></manifest>' > capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
-            
-            cat > capacitor-cordova-android-plugins/build.gradle << 'EOF'
-          apply plugin: 'com.android.library'
-          
-          android {
-              namespace 'capacitor.cordova.android.plugins'
-              compileSdk 34
-          
-              defaultConfig {
-                  minSdk 22
-                  targetSdk 34
-              }
-          
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
-          }
-          
-          repositories {
-              google()
-              mavenCentral()
-          }
-          
-          dependencies {
-              implementation project(':capacitor-android')
-          }
-          EOF
           fi
 
       - name: Sync Capacitor
