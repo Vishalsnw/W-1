@@ -15,6 +15,10 @@ buildscript {
 
 apply plugin: 'com.android.library'
 
+// PLUGIN GRADLE EXTENSIONS START
+apply from: "cordova.variables.gradle"
+// PLUGIN GRADLE EXTENSIONS END
+
 android {
     namespace "capacitor.cordova.android.plugins"
     // Convert to integer if it's a string like "android-34"
@@ -70,10 +74,6 @@ dependencies {
 
     // SUB-PROJECT DEPENDENCIES END
 }
-
-// PLUGIN GRADLE EXTENSIONS START
-apply from: "cordova.variables.gradle"
-// PLUGIN GRADLE EXTENSIONS END
 
 for (def func : cdvPluginPostBuildExtras) {
     func()

@@ -100,3 +100,6 @@ args = "echo \"🧪 Ready to test Crashlytics!\""
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "echo \"Build the app and test the crash functionality\""
+
+[agent]
+expertMode = true
